@@ -1,232 +1,265 @@
-import { supabase } from '@/lib/client';
-import { formatPhoneNumber, validatePhoneNumber } from '@/lib/validation';
-import { UserProfile } from '@/types';
-import { useUser } from '@clerk/clerk-react';
-import { useEffect, useState } from 'react';
+import { UserProfile } from "@/types";
+import { useUser } from "@clerk/nextjs";
+import { useCallback, useEffect, useState } from "react";
 
-export const useProfile = () => {
-  const { user } = useUser();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Get user profile
-  const getProfile = async () => {
-    if (!user) return null;
+interface MergedProfile {
+  // From Clerk
+  clerk_id: string;
+  email: string;
+  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  profile_image_url: string | null;
     
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('ser_id', user.id)
-        .single();
+  // From Supabase
+  profile_id: string | null;
+  username: string | null;
+  phone_number: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+    
+  // Computed
+  has_complete_profile: boolean;
+  missing_fields: string[];
+}
 
-      if (error) throw error;
-      
-      // Format phone number for display if it exists
-      const formattedProfile = data ? {
-        ...data,
-        phone_number: data.phone_number ? formatPhoneNumber(data.phone_number) : null
-      } : null;
-      
-      setProfile(formattedProfile);
-      return formattedProfile;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
+export function useProfile() {
+  const { user, isLoaded: isClerkLoaded } = useUser();
+  const [ profile, setProfile ] = useState<UserProfile | null>(null);
+  const [ mergedProfile, setMergedProfile ] = useState<MergedProfile | null>(null);
+  const [ isLoading, setIsLoading ] = useState(false);
+  const [ error, setError ] = useState<string | null>(null);
+
+  //fetch profile from API
+  const fetchProfile = useCallback(async () => {
+    if(!user?.id) return null;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/account/profile');
+      if(!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+
+      const data = await response.json();
+      if(data.exists && data.profile) {
+        setProfile(data.profile);
+      } else {
+        setProfile(null);
+        return null;
+      }
+    } catch(err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch profile';
+      setError(errorMessage);
+      console.error('Error fetching profile : ', err);
       return null;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [user?.id])
 
-  // Create profile (on first login)
-  const createProfile = async (profileData: {
-    username?: string;
-    phone_number?: string | null;
-  }) => {
-    if (!user) throw new Error('User not authenticated');
+  //Initialize profile(create if doesn't exist)
+  const initializeProfile = useCallback(async () => {
+    if(user?.id) return null;
+    setIsLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      
-      // Validate phone number if provided
-      if (profileData.phone_number && !validatePhoneNumber(profileData.phone_number)) {
-        throw new Error('Please enter a valid 10-digit Indian phone number');
+      const response = await fetch('/api/account/profile/initialize', {
+        method : 'POST'
+      });
+
+      if(!response.ok) {
+        throw new Error('Failed to initialize profile');
       }
 
-      // Clean phone number (remove any formatting for storage)
-      const cleanedPhoneNumber = profileData.phone_number 
-        ? profileData.phone_number.replace(/\D/g, '')
-        : null;
-
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .insert([
-          {
-            ser_id: user.id,
-            username: profileData.username,
-            phone_number: cleanedPhoneNumber,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      // Format the returned profile for display
-      const formattedProfile = {
-        ...data,
-        phone_number: data.phone_number ? formatPhoneNumber(data.phone_number) : null
-      };
-      
-      setProfile(formattedProfile);
-      return formattedProfile;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create profile');
-      throw err;
+      const data = await response.json();
+      setProfile(data.profile);
+      return data.profile;
+    } catch(err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initilize profile';
+      setError(errorMessage);
+      console.error('Error initializing profile : ', err);
+      return null;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [user?.id])
 
-  // Update profile
-  const updateProfile = async (updates: {
+const updateProfile = useCallback(async (updates: {
     username?: string;
     phone_number?: string;
-  }) => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      setLoading(true);
-      
-      // Validate phone number if provided
-      if (updates.phone_number && !validatePhoneNumber(updates.phone_number)) {
-        throw new Error('Please enter a valid 10-digit Indian phone number');
-      }
-
-      // Clean phone number for storage
-      const updateData = { ...updates };
-      if (updateData.phone_number) {
-        updateData.phone_number = updateData.phone_number.replace(/\D/g, '');
-      }
-
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .update(updateData)
-        .eq('ser_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      // Format the returned profile for display
-      const formattedProfile = {
-        ...data,
-        phone_number: data.phone_number ? formatPhoneNumber(data.phone_number) : null
-      };
-      
-      setProfile(formattedProfile);
-      return formattedProfile;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile');
-      throw err;
-    } finally {
-      setLoading(false);
+  }): Promise<boolean> => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return false;
     }
-  };
 
-  // Update phone number specifically
-  const updatePhoneNumber = async (phoneNumber: string) => {
-    return updateProfile({ phone_number: phoneNumber });
-  };
-
-  // Update username specifically
-  const updateUsername = async (username: string) => {
-    return updateProfile({ username });
-  };
-
-  // Check if phone number is required and not set
-  const isPhoneNumberRequired = (): boolean => {
-    return !profile?.phone_number;
-  };
-
-  // Sync Clerk user with profile (without relying on Clerk phone number)
-  const syncProfile = async () => {
-    if (!user) return;
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const existingProfile = await getProfile();
-      if (!existingProfile) {
-        // Create profile with email-based username if doesn't exist
-        const username = user.username || 
-                        user.fullName || 
-                        user.primaryEmailAddress?.emailAddress.split('@')[0] || 
-                        `user_${user.id.slice(-8)}`;
-        
-        await createProfile({
-          username: username,
-          phone_number: null, // Phone number will be collected separately
+      const response = await fetch('/api/account/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      const data = await response.json();
+      setProfile(data.profile);
+      
+      // Update merged profile
+      if (mergedProfile) {
+        setMergedProfile({
+          ...mergedProfile,
+          username: data.profile.username,
+          phone_number: data.profile.phone_number,
+          updated_at: data.profile.updated_at
         });
       }
+      
+      return true;
     } catch (err) {
-      console.error('Failed to sync profile:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
+      setError(errorMessage);
+      console.error('Error updating profile:', err);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [user?.id, mergedProfile]);
+
+  // Update phone number specifically
+  const updatePhoneNumber = useCallback(async (phoneNumber: string): Promise<boolean> => {
+    return updateProfile({ phone_number: phoneNumber });
+  }, [updateProfile]);
+
+  // Update username specifically
+  const updateUsername = useCallback(async (username: string): Promise<boolean> => {
+    return updateProfile({ username });
+  }, [updateProfile]);
+
+  // Merge Clerk data with Supabase profile
+  const mergProfileData = useCallback(() => {
+    if (!user || !isClerkLoaded) {
+      setMergedProfile(null);
+      return;
+    }
+
+    const missingFields: string[] = [];
+    if (!profile?.username) missingFields.push('username');
+    if (!profile?.phone_number) missingFields.push('phone_number');
+
+    const merged: MergedProfile = {
+      // Clerk data
+      clerk_id: user.id,
+      email: user.primaryEmailAddress?.emailAddress || '',
+      full_name: user.fullName,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      profile_image_url: user.imageUrl,
+      
+      // Supabase data
+      profile_id: profile?.id || null,
+      username: profile?.username || null,
+      phone_number: profile?.phone_number || null,
+      created_at: profile?.created_at || null,
+      updated_at: profile?.updated_at || null,
+      
+      // Computed
+      has_complete_profile: missingFields.length === 0,
+      missing_fields: missingFields
+    };
+
+    setMergedProfile(merged);
+  }, [user, isClerkLoaded, profile]);
+
+  // Check if phone number is required and not set
+  const isPhoneNumberRequired = useCallback((): boolean => {
+    return !profile?.phone_number;
+  }, [profile]);
 
   // Validate profile data before submission
-  const validateProfileData = (profileData: {
+  const validateProfileData = useCallback((data: {
     username?: string;
     phone_number?: string;
   }): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
 
-    if (profileData.username && profileData.username.length < 3) {
-      errors.push('Username must be at least 3 characters long');
+    if (data.username !== undefined) {
+      if (data.username.length < 3) {
+        errors.push('Username must be at least 3 characters long');
+      }
+      if (data.username.length > 30) {
+        errors.push('Username must be less than 30 characters');
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(data.username)) {
+        errors.push('Username can only contain letters, numbers, and underscores');
+      }
     }
 
-    if (profileData.phone_number && !validatePhoneNumber(profileData.phone_number)) {
-      errors.push('Please enter a valid 10-digit Indian phone number');
+    if (data.phone_number !== undefined) {
+      const cleanPhone = data.phone_number.replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        errors.push('Phone number must be 10 digits');
+      }
+      if (!/^[6-9]/.test(cleanPhone)) {
+        errors.push('Phone number must start with 6, 7, 8, or 9');
+      }
     }
 
     return {
       isValid: errors.length === 0,
       errors
     };
-  };
+  }, []);
 
-  // Format phone number for display
-  const getFormattedPhoneNumber = (): string | null => {
-    return profile?.phone_number ? formatPhoneNumber(profile.phone_number) : null;
-  };
-
-  // Get raw phone number (without formatting)
-  const getRawPhoneNumber = (): string | null => {
-    return profile?.phone_number ? profile.phone_number.replace(/\D/g, '') : null;
-  };
-
+  // Auto-fetch profile when user loads
   useEffect(() => {
-    if (user) {
-      getProfile();
-    } else {
+    if (isClerkLoaded && user) {
+      fetchProfile();
+    } else if (isClerkLoaded && !user) {
       setProfile(null);
+      setMergedProfile(null);
     }
-  }, [user]);
+  }, [isClerkLoaded, user, fetchProfile]);
+
+  // Merge data when profile or user changes
+  useEffect(() => {
+    mergProfileData();
+  }, [mergProfileData]);
 
   return {
+    // Data
     profile,
-    loading,
+    mergedProfile,
+    clerkUser: user,
+    
+    // Loading states
+    isLoading,
+    isClerkLoaded,
+    
+    // Error
     error,
-    getProfile,
-    createProfile,
+    
+    // Methods
+    fetchProfile,
+    initializeProfile,
     updateProfile,
     updatePhoneNumber,
     updateUsername,
-    syncProfile,
     isPhoneNumberRequired,
     validateProfileData,
-    getFormattedPhoneNumber,
-    getRawPhoneNumber,
-    refetch: getProfile,
-  };
-};
+    
+    // Convenience
+    refetch: fetchProfile
+  };  
+}

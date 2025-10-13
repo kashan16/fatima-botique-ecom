@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { Heart, LogOut, SearchIcon, Settings, ShoppingCartIcon, UserIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { ProfileModal } from "../modals/ProfileModal";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -20,6 +22,7 @@ export function Navbar() {
   const { cartCount } = useCart();
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
+  const [ isProfileModalOpen, setIsProfileModalOpen ] = useState(false);
 
   const navItemVariants = {
     hidden: { opacity: 0, y: -10 },
@@ -35,6 +38,7 @@ export function Navbar() {
   };
 
   return (
+    <>
     <motion.div
       initial="hidden"
       animate="visible"
@@ -114,14 +118,14 @@ export function Navbar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/account/profile" className="flex items-center">
+                  <DropdownMenuItem
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="flex items-center cursor-pointer">
                       <UserIcon className="mr-2 h-4 w-4" />
                       Profile
-                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/account/orders" className="flex items-center">
+                    <Link href="/account/orders" className="flex items-center cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
                       Orders
                     </Link>
@@ -189,5 +193,9 @@ export function Navbar() {
         </div>
       </div>
     </motion.div>
+    <ProfileModal
+      isOpen={isProfileModalOpen}
+      onClose={() => setIsProfileModalOpen(false)}/>
+    </>
   );
 }

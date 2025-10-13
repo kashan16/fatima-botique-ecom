@@ -1,217 +1,309 @@
-import { supabase } from '@/lib/client';
 import { Address, AddressType, CreateAddressInput } from '@/types';
-import { useUser } from '@clerk/clerk-react';
-import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useCallback, useEffect, useState } from 'react';
 
-export const useAddresses = () => {
-  const { user } = useUser();
+export function useAddresses() {
+  const { user, isLoaded: isUserLoaded } = useUser();
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch all addresses
-  const fetchAddresses = async () => {
-    if (!user) return [];
+  const fetchAddresses = useCallback(async () => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_default', { ascending: false })
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/account/addresses');
 
-      if (error) throw error;
-      setAddresses(data || []);
-      return data || [];
+      if (!response.ok) {
+        throw new Error('Failed to fetch addresses');
+      }
+
+      const data = await response.json();
+      setAddresses(data.addresses || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch addresses');
-      return [];
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch addresses';
+      setError(errorMessage);
+      console.error('Error fetching addresses:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  // Fetch addresses by type
-  const fetchAddressesByType = async (type: AddressType) => {
-    if (!user) return [];
-
-    try {
-      const { data, error } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .or(`address_type.eq.${type},address_type.eq.both`)
-        .order('is_default', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch addresses by type');
-      return [];
-    }
-  };
+  }, [user?.id]);
 
   // Create new address
-  const createAddress = async (addressData: CreateAddressInput) => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      setLoading(true);
-      
-      // If setting as default, unset other defaults of same type
-      if (addressData.is_default) {
-        await supabase
-          .from('addresses')
-          .update({ is_default: false })
-          .eq('user_id', user.id)
-          .or(`address_type.eq.${addressData.address_type},address_type.eq.both`);
-      }
-
-      const { data, error } = await supabase
-        .from('addresses')
-        .insert([{ ...addressData, user_id: user.id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      await fetchAddresses(); // Refresh list
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create address');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update address
-  const updateAddress = async (addressId: string, updates: Partial<CreateAddressInput>) => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      setLoading(true);
-      
-      // If setting as default, unset other defaults
-      if (updates.is_default) {
-        await supabase
-          .from('addresses')
-          .update({ is_default: false })
-          .eq('user_id', user.id)
-          .neq('id', addressId)
-          .or(`address_type.eq.${updates.address_type},address_type.eq.both`);
-      }
-
-      const { data, error } = await supabase
-        .from('addresses')
-        .update(updates)
-        .eq('id', addressId)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      await fetchAddresses(); // Refresh list
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update address');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Delete address
-  const deleteAddress = async (addressId: string) => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('addresses')
-        .delete()
-        .eq('id', addressId)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      await fetchAddresses(); // Refresh list
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete address');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Set default address
-  const setDefaultAddress = async (addressId: string, addressType: AddressType) => {
-    return updateAddress(addressId, { is_default: true, address_type: addressType });
-  };
-
-  // Get default address by type
-  const getDefaultAddress = async (type: AddressType): Promise<Address | null> => {
-    if (!user) return null;
-
-    try {
-      const { data, error } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_default', true)
-        .or(`address_type.eq.${type},address_type.eq.both`)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get default address');
+  const createAddress = useCallback(async (
+    addressData: CreateAddressInput
+  ): Promise<Address | null> => {
+    if (!user?.id) {
+      setError('User not authenticated');
       return null;
     }
-  };
 
-  // Validate address data
-  const validateAddress = (addressData: CreateAddressInput): string | null => {
-    if (!addressData.full_name?.trim()) return 'Full name is required';
-    if (!addressData.phone_number?.trim()) return 'Phone number is required';
-    if (!addressData.address_line1?.trim()) return 'Address line 1 is required';
-    if (!addressData.city?.trim()) return 'City is required';
-    if (!addressData.state?.trim()) return 'State is required';
-    if (!addressData.pincode?.trim()) return 'Pincode is required';
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/account/addresses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(addressData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create address');
+      }
+
+      const data = await response.json();
+      
+      // Refresh addresses list
+      await fetchAddresses();
+      
+      return data.address;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create address';
+      setError(errorMessage);
+      console.error('Error creating address:', err);
+      return null;
+    } finally {
+      setIsCreating(false);
+    }
+  }, [user?.id, fetchAddresses]);
+
+  // Update address
+  const updateAddress = useCallback(async (
+    addressId: string,
+    updates: Partial<CreateAddressInput>
+  ): Promise<boolean> => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return false;
+    }
+
+    setIsUpdating(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/account/addresses/${addressId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update address');
+      }
+
+      // Refresh addresses list
+      await fetchAddresses();
+      
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update address';
+      setError(errorMessage);
+      console.error('Error updating address:', err);
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [user?.id, fetchAddresses]);
+
+  // Delete address
+  const deleteAddress = useCallback(async (addressId: string): Promise<boolean> => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return false;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/account/addresses/${addressId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete address');
+      }
+
+      // Refresh addresses list
+      await fetchAddresses();
+      
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete address';
+      setError(errorMessage);
+      console.error('Error deleting address:', err);
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [user?.id, fetchAddresses]);
+
+  // Set default address
+  const setDefaultAddress = useCallback(async (addressId: string): Promise<boolean> => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return false;
+    }
+
+    setIsUpdating(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/account/addresses/default', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address_id: addressId })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to set default address');
+      }
+
+      // Refresh addresses list
+      await fetchAddresses();
+      
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to set default address';
+      setError(errorMessage);
+      console.error('Error setting default address:', err);
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [user?.id, fetchAddresses]);
+
+  // Get address by ID (from cached list)
+  const getAddressById = useCallback((addressId: string): Address | undefined => {
+    return addresses.find(addr => addr.id === addressId);
+  }, [addresses]);
+
+  // Get addresses by type
+  const getAddressesByType = useCallback((type: AddressType): Address[] => {
+    return addresses.filter(addr => 
+      addr.address_type === type || addr.address_type === 'both'
+    );
+  }, [addresses]);
+
+  // Get default address
+  const getDefaultAddress = useCallback((type?: AddressType): Address | null => {
+    if (!type) {
+      return addresses.find(addr => addr.is_default) || null;
+    }
     
-    // Basic phone validation
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(addressData.phone_number.replace(/\D/g, ''))) {
-      return 'Please enter a valid phone number';
+    return addresses.find(addr => 
+      addr.is_default && (addr.address_type === type || addr.address_type === 'both')
+    ) || null;
+  }, [addresses]);
+
+  // Validate address data client-side
+  const validateAddress = useCallback((
+    addressData: CreateAddressInput
+  ): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    if (!addressData.full_name?.trim()) {
+      errors.push('Full name is required');
     }
 
-    // Basic pincode validation
-    const pincodeRegex = /^\d{6}$/;
-    if (!pincodeRegex.test(addressData.pincode)) {
-      return 'Please enter a valid 6-digit pincode';
+    if (!addressData.phone_number?.trim()) {
+      errors.push('Phone number is required');
+    } else {
+      const cleanPhone = addressData.phone_number.replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        errors.push('Phone number must be 10 digits');
+      }
+      if (!/^[6-9]/.test(cleanPhone)) {
+        errors.push('Phone number must start with 6, 7, 8, or 9');
+      }
     }
 
-    return null;
-  };
+    if (!addressData.address_line1?.trim()) {
+      errors.push('Address line 1 is required');
+    }
 
+    if (!addressData.city?.trim()) {
+      errors.push('City is required');
+    }
+
+    if (!addressData.state?.trim()) {
+      errors.push('State is required');
+    }
+
+    if (!addressData.pincode?.trim()) {
+      errors.push('Pincode is required');
+    } else if (!/^\d{6}$/.test(addressData.pincode)) {
+      errors.push('Pincode must be 6 digits');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }, []);
+
+  // Computed values
+  const defaultAddress = getDefaultAddress();
+  const addressCount = addresses.length;
+  const shippingAddresses = getAddressesByType('shipping');
+  const billingAddresses = getAddressesByType('billing');
+
+  // Auto-fetch on mount
   useEffect(() => {
-    if (user) {
+    if (isUserLoaded && user) {
       fetchAddresses();
+    } else if (isUserLoaded && !user) {
+      setAddresses([]);
     }
-  }, [user]);
+  }, [isUserLoaded, user, fetchAddresses]);
 
   return {
+    // Data
     addresses,
-    loading,
+    defaultAddress,
+    addressCount,
+    shippingAddresses,
+    billingAddresses,
+    
+    // Loading states
+    isLoading,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    
+    // Error
     error,
+    
+    // Methods
     fetchAddresses,
-    fetchAddressesByType,
     createAddress,
     updateAddress,
     deleteAddress,
     setDefaultAddress,
+    getAddressById,
+    getAddressesByType,
     getDefaultAddress,
     validateAddress,
-    refetch: fetchAddresses,
+    
+    // Convenience
+    refetch: fetchAddresses
   };
-};
+}
