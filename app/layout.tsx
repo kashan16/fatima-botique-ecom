@@ -25,7 +25,7 @@ export default function RootLayout({
         {/* Wrapping everything that needs client-only providers */}
         <Providers>
           <UserAssetsProvider>
-            <div className="min-h-screen flex flex-col">
+            <div className="min-h-screen flex flex-col md:overflow-y-hidden">
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />

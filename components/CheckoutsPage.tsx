@@ -24,8 +24,10 @@ import {
   CreditCard,
   Loader2,
   MapPin,
+  Minus,
   Package,
   Plus,
+  Trash2,
   Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -34,19 +36,20 @@ import { toast } from 'sonner';
 export const CheckoutsPage = () => {
   const router = useRouter();
   const { isSignedIn, user } = useUser();
-  const { cart, cartItems, cartTotal, loading: cartLoading } = useCart();
-  const { addresses, createAddress, loading: addressesLoading } = useAddresses();
+  const { cart, cartItems, cartTotal, loading: cartLoading, updateQuantity, removeFromCart } = useCart();
+  const { addresses, createAddress, isLoading: addressesLoading } = useAddresses();
   
-  const { 
-    processCheckout, 
-    loading: checkoutLoading, 
-    validateCheckoutData 
+  const {
+    processCheckout,
+    loading: checkoutLoading,
+    validateCheckoutData
   } = useCheckout();
 
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('razorpay');
   const [orderNotes, setOrderNotes] = useState('');
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
   // Address form state
   const [addressForm, setAddressForm] = useState<CreateAddressInput>({
@@ -144,6 +147,46 @@ export const CheckoutsPage = () => {
     }
   };
 
+  const handleQuantityChange = async(cartItemId: string, newQuantity: number) => {
+    if(newQuantity < 1) return;
+    const item = cartItems.find(item => item.id === cartItemId);
+    if(item && item.product_variant?.stock_quantity && newQuantity > item.product_variant.stock_quantity) {
+      toast.error('Cannot add more items than available in stock.');
+      return;
+    }
+    setUpdatingItems(prev => new Set(prev).add(cartItemId));
+    try {
+      await updateQuantity(cartItemId, newQuantity);
+      toast.success('Item quantity updated!');
+    } catch(error) {
+      console.error('Failed to update error: ',error);
+      toast.error('Failed to update quantity.');
+    } finally {
+      setUpdatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(cartItemId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleRemoveItem = async (cartItemId: string) => {
+    setUpdatingItems(prev => new Set(prev).add(cartItemId));
+    try {
+      await removeFromCart(cartItemId);
+      toast.info('Item removed');
+    } catch(error) {
+      console.error('Failed to remove item: ', error);
+      toast.error('Failed to remove item.');
+    } finally {
+      setUpdatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(cartItemId);
+        return newSet;
+      });
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
       toast.error("Please select a shipping address.");
@@ -204,6 +247,8 @@ export const CheckoutsPage = () => {
       return `/${trimmed.replace(/^\/+/, '')}`;
     };
 
+    const isUpdating = updatingItems.has(item.id);
+
     // Calculate final price safely
     const basePrice = item.product_variant?.product?.base_price || 0;
     const priceAdjustment = item.product_variant?.price_adjustment || 0;
@@ -235,9 +280,40 @@ export const CheckoutsPage = () => {
           </p>
           <p className="text-gray-500 text-sm">Qty: {item.quantity}</p>
         </div>
-        <p className="font-semibold text-gray-900 font-sans text-base">
-          ₹{(finalPrice * item.quantity).toFixed(2)}
-        </p>
+        <div className='grid items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <p className="font-semibold text-gray-900 font-sans text-base">
+              ₹{(finalPrice * item.quantity).toFixed(2)}
+            </p>     
+            <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleRemoveItem(item.id)}
+            disabled={isUpdating}
+            className='h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100 transition-colors'>
+            <Trash2 className='w-4 h-4'/>
+          </Button>       
+          </div>
+          <div className='flex items-center'>
+            <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+            disabled={isUpdating || item.quantity <= 1}>
+              <Minus className='w-3 h-3'/>
+            </Button>
+            <span className='w-8 text-center font-semibold text-gray-900 text-base font-sans'>
+              {isUpdating ? <Loader2 className='h-4 w-4 animate-spin mx-auto'/> : item.quantity}
+            </span>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+            disabled={isUpdating || item.quantity <= 1}>
+              <Plus className='w-3 h-3'/>
+            </Button>
+            </div>
+          </div>
       </div>
     );
   };
@@ -534,7 +610,6 @@ export const CheckoutsPage = () => {
               <CardContent className="p-6">
                 {/* Order Items */}
                 <div className="space-y-2 mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                  {/* FIX: Use the typed cartItemsWithDetails instead of direct cartItems */}
                   {cartItemsWithDetails.map((item) => (
                     <OrderItem key={item.id} item={item} />
                   ))}

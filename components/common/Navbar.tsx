@@ -1,7 +1,6 @@
 "use client";
 
-import { useCart } from "@/hooks/useCart";
-import { SignInButton, SignUpButton, useClerk, useUser } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Heart, LogOut, SearchIcon, Settings, ShoppingCartIcon, UserIcon } from "lucide-react";
 import Image from "next/image";
@@ -19,7 +18,6 @@ import {
 } from "../ui/dropdown-menu";
 
 export function Navbar() {
-  const { cartCount } = useCart();
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const [ isProfileModalOpen, setIsProfileModalOpen ] = useState(false);
@@ -142,24 +140,26 @@ export function Navbar() {
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <SignInButton>
+                <Link
+                  href="/sign-in">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-gray-600 hover:bg-gray-50 hover:text-pink-400 text-sm font-medium"
                   >
                     Sign In
-                  </Button>
-                </SignInButton>
-                <SignUpButton>
+                  </Button>                    
+                  </Link>
+                <Link
+                  href='/sign-up'>
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-gray-600 border-gray-300 hover:bg-pink-50 hover:text-pink-400 hover:border-pink-400 text-sm font-medium"
                   >
                     Sign Up
-                  </Button>
-                </SignUpButton>
+                  </Button>                
+                </Link>  
               </div>
             )}
           </motion.div>
@@ -173,9 +173,6 @@ export function Navbar() {
                 aria-label="Shopping cart"
               >
                 <ShoppingCartIcon className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 bg-pink-400 text-white rounded-full text-xs h-4 w-4 flex items-center justify-center">
-                  {cartCount}
-                </span>
               </Button>
             </Link>
           </motion.div>
