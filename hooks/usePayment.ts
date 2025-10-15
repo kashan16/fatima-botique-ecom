@@ -415,6 +415,7 @@ export const usePayment = () => {
       netbanking: 'Net Banking',
       wallet: 'Wallet',
       cod: 'Cash on Delivery',
+      razorpay: 'Razorpay',
     };
     
     return displayNames[method];
