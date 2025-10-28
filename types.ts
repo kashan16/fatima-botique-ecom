@@ -11,36 +11,26 @@ export interface UserProfile {
 // Address Types
 export type AddressType = 'shipping' | 'billing' | 'both';
 
-export interface Address {
+export interface Address extends CreateAddressInput {
   id: string;
   user_id: string;
-  address_type: AddressType;
-  full_name: string;
-  phone_number: string;
-  address_line1: string;
-  address_line2: string | null;
-  city: string;
-  state: string;
-  pincode: string;
-  landmark: string | null;
-  is_default: boolean;
   created_at: string;
   updated_at: string;
-  deleted_at: string | null;
-  updated_by: string | null;
+  deleted_at?: string;
+  updated_by?: string;
 }
 
 export interface CreateAddressInput {
-  address_type: AddressType;
   full_name: string;
   phone_number: string;
   address_line1: string;
   address_line2?: string;
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;
-  landmark?: string;
-  is_default?: boolean;
+  address_type: AddressType;
+  is_default: boolean;
 }
 
 // Category Types

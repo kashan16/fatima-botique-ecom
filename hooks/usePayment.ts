@@ -62,6 +62,11 @@ interface PaymentFailureReason {
   failure_reason: string;
 }
 
+interface OrderAmountResponse {
+  total_amount: number;
+  currency: string;
+}
+
 export const usePayment = () => {
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
@@ -77,20 +82,18 @@ export const usePayment = () => {
       // Create Razorpay order
       const razorpayOrder = await createRazorpayOrder(amount, currency);
 
-      // Save payment record
+      // Save payment record using Supabase
       const { data: paymentRecord, error: paymentError } = await supabase
         .from('order_payments')
-        .insert([
-          {
-            order_id: orderId,
-            provider: 'razorpay',
-            provider_order_id: razorpayOrder.id,
-            method: 'upi', // Default, can be changed by user
-            amount,
-            currency,
-            status: 'pending',
-          },
-        ])
+        .insert({
+          order_id: orderId,
+          provider: 'razorpay',
+          provider_order_id: razorpayOrder.id,
+          method: 'upi', // Default, can be changed by user
+          amount,
+          currency,
+          status: 'pending',
+        })
         .select()
         .single();
 
@@ -164,14 +167,7 @@ export const usePayment = () => {
     }
   };
 
-  // Verify Razorpay payment signature
-  const verifyRazorpaySignature = (): boolean => {
-    // This should be implemented on the server for security
-    // For now, we'll assume it's verified on the server side
-    return true;
-  };
-
-  // Update payment status in order_payments table
+  // Update payment status using Supabase
   const updatePaymentStatus = async (
     paymentId: string,
     status: PaymentProviderStatus,
@@ -179,14 +175,21 @@ export const usePayment = () => {
     providerSignature?: string
   ) => {
     try {
+      const updateData: Record<string, unknown> = {
+        status,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (providerPaymentId) {
+        updateData.provider_payment_id = providerPaymentId;
+      }
+      if (providerSignature) {
+        updateData.provider_signature = providerSignature;
+      }
+
       const { error } = await supabase
         .from('order_payments')
-        .update({
-          status,
-          provider_payment_id: providerPaymentId,
-          provider_signature: providerSignature,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', paymentId);
 
       if (error) throw error;
@@ -202,14 +205,6 @@ export const usePayment = () => {
     paymentRecordId: string
   ) => {
     try {
-      // Verify payment signature
-      const isValid = verifyRazorpaySignature();
-
-      if (!isValid) {
-        await handlePaymentFailure(orderId, paymentRecordId, 'Invalid payment signature');
-        return;
-      }
-
       // Update payment record
       await updatePaymentStatus(
         paymentRecordId,
@@ -218,7 +213,7 @@ export const usePayment = () => {
         response.razorpay_signature
       );
 
-      // Update order status
+      // Update order status using Supabase
       const { error: orderError } = await supabase
         .from('orders')
         .update({
@@ -226,21 +221,20 @@ export const usePayment = () => {
           is_paid: true,
           transaction_id: response.razorpay_payment_id,
           payment_summary: response,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', orderId);
 
       if (orderError) throw orderError;
 
-      // Add order status history
+      // Add order status history using Supabase
       const { error: historyError } = await supabase
         .from('order_status_history')
-        .insert([
-          {
-            order_id: orderId,
-            status: 'confirmed',
-            notes: 'Payment completed successfully',
-          },
-        ]);
+        .insert({
+          order_id: orderId,
+          status: 'confirmed',
+          notes: 'Payment completed successfully',
+        });
 
       if (historyError) throw historyError;
 
@@ -258,32 +252,31 @@ export const usePayment = () => {
     reason: string
   ) => {
     try {
-      // Update payment record
+      // Update payment record using Supabase
       await updatePaymentStatus(paymentRecordId, 'failed');
 
       const failureReason: PaymentFailureReason = { failure_reason: reason };
 
-      // Update order status
+      // Update order status using Supabase
       const { error: orderError } = await supabase
         .from('orders')
         .update({
           payment_status: 'failed',
           payment_summary: failureReason,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', orderId);
 
       if (orderError) throw orderError;
 
-      // Add order status history
+      // Add order status history using Supabase
       const { error: historyError } = await supabase
         .from('order_status_history')
-        .insert([
-          {
-            order_id: orderId,
-            status: 'pending',
-            notes: `Payment failed: ${reason}`,
-          },
-        ]);
+        .insert({
+          order_id: orderId,
+          status: 'pending',
+          notes: `Payment failed: ${reason}`,
+        });
 
       if (historyError) throw historyError;
 
@@ -293,50 +286,57 @@ export const usePayment = () => {
     }
   };
 
-  // Handle COD (Cash on Delivery) flow
+  // Handle COD (Cash on Delivery) flow using Supabase
   const handleCODOrder = async (orderId: string) => {
     if (!user) throw new Error('User not authenticated');
 
     try {
       setLoading(true);
 
-      // Create payment record for COD
+      // Get order amount first
+      const { data: order, error: orderFetchError } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('id', orderId)
+        .single();
+
+      if (orderFetchError) throw orderFetchError;
+      if (!order) throw new Error('Order not found');
+
+      // Create payment record for COD using Supabase
       const { error: paymentError } = await supabase
         .from('order_payments')
-        .insert([
-          {
-            order_id: orderId,
-            provider: 'cod',
-            method: 'cod',
-            amount: 0, // Will be collected on delivery
-            currency: 'INR',
-            status: 'pending',
-          },
-        ]);
+        .insert({
+          order_id: orderId,
+          provider: 'cod',
+          method: 'cod',
+          amount: order.total_amount,
+          currency: 'INR',
+          status: 'pending',
+        });
 
       if (paymentError) throw paymentError;
 
-      // Update order status for COD
+      // Update order status for COD using Supabase
       const { error: orderError } = await supabase
         .from('orders')
         .update({
           payment_status: 'cod_pending',
           payment_method: 'cod',
+          updated_at: new Date().toISOString(),
         })
         .eq('id', orderId);
 
       if (orderError) throw orderError;
 
-      // Add order status history
+      // Add order status history using Supabase
       const { error: historyError } = await supabase
         .from('order_status_history')
-        .insert([
-          {
-            order_id: orderId,
-            status: 'confirmed',
-            notes: 'COD order confirmed. Payment pending on delivery.',
-          },
-        ]);
+        .insert({
+          order_id: orderId,
+          status: 'confirmed',
+          notes: 'COD order confirmed. Payment pending on delivery.',
+        });
 
       if (historyError) throw historyError;
 
@@ -348,12 +348,6 @@ export const usePayment = () => {
       setLoading(false);
     }
   };
-
-  // Type for order amount response
-  interface OrderAmountResponse {
-    total_amount: number;
-    currency: string;
-  }
 
   // Retry failed payment
   const retryPayment = async (orderId: string) => {
@@ -375,7 +369,7 @@ export const usePayment = () => {
     );
   };
 
-  // Get payment details for an order
+  // Get payment details for an order using Supabase
   const getPaymentDetails = async (orderId: string): Promise<OrderPayment[]> => {
     try {
       const { data, error } = await supabase
@@ -425,7 +419,6 @@ export const usePayment = () => {
     loading,
     error,
     initializeRazorpayPayment,
-    verifyRazorpaySignature,
     updatePaymentStatus,
     handlePaymentSuccess,
     handlePaymentFailure,

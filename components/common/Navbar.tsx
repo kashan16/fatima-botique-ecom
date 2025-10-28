@@ -8,7 +8,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SearchModal } from "../modals/MobileSearchModal";
-import { ProfileModal } from "../modals/ProfileModal";
 import { SearchBar } from "../modals/SearchModal";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
@@ -20,7 +19,6 @@ import MenuItem from '@mui/material/MenuItem';
 export function Navbar() {
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -194,7 +192,7 @@ export function Navbar() {
                           </div>
                         </div>
 
-                        <MenuItem onClick={() => setIsProfileModalOpen(true)}>
+                        <MenuItem component={Link} href="/account/profile">
                           <ListItemIcon>
                             <User className="w-4 h-4" />
                           </ListItemIcon>
@@ -365,7 +363,6 @@ export function Navbar() {
                         <div className="space-y-2">
                           <Button
                             onClick={() => {
-                              setIsProfileModalOpen(true);
                               setIsMobileMenuOpen(false);
                             }}
                             variant="outline"
@@ -475,13 +472,6 @@ export function Navbar() {
           </div>
         </div>
       </motion.nav>
-
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-      />
-      
       <SearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}

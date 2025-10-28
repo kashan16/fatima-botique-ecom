@@ -1,344 +1,470 @@
-import {
-  ApiResponse,
+// hooks/useOrder.ts
+'use client';
+
+import { supabase } from '@/lib/client';
+import type {
   CheckoutSummary,
   CreateOrderInput,
   Order,
   OrderFilters,
   OrderStatus,
   OrderStatusHistoryItem,
-  OrderSummary,
   OrderWithDetails,
-  PaginatedResponse
 } from '@/types';
 import { useAuth } from '@clerk/nextjs';
 import { useCallback, useState } from 'react';
 import { useCart } from './useCart';
 
-// Extended interface for order details from API
-interface OrderDetails extends OrderWithDetails {
-  status_history: OrderStatusHistoryItem[];
-  can_cancel: boolean;
-  can_return: boolean;
-  return_window_days: number;
-}
+export function useOrder() {
+  const { userId, isLoaded: authLoaded } = useAuth();
+  const { cartItems, cartTotal, cartCount, clearCart } = useCart();
 
-interface UseOrderReturn {
-  // State
-  orders: OrderWithDetails[];
-  loading: boolean;
-  error: string | null;
-  
-  // Order Management
-  fetchOrders: (filters?: OrderFilters) => Promise<OrderWithDetails[]>;
-  fetchOrderById: (orderId: string) => Promise<OrderWithDetails | null>;
-  createOrder: (orderData: CreateOrderInput) => Promise<Order>;
-  cancelOrder: (orderId: string, reason?: string) => Promise<void>;
-  returnOrder: (orderId: string, reason: string) => Promise<void>;
-  
-  // Order Tracking
-  getOrderStatusHistory: (orderId: string) => Promise<OrderStatusHistoryItem[]>;
-  trackOrder: (orderId: string) => Promise<{
-    order: OrderWithDetails | null;
-    statusHistory: OrderStatusHistoryItem[];
-    currentStatus: OrderStatus | undefined;
-    estimatedDelivery: string;
-  }>;
-  
-  // Utilities
-  calculateCheckoutSummary: () => Promise<CheckoutSummary>;
-  refetch: () => Promise<OrderWithDetails[]>;
-}
-
-export const useOrder = (): UseOrderReturn => {
-  const { userId } = useAuth();
-  const { cartItems, cartTotal, cartCount, refreshCart, clearCart } = useCart();
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const ensureAuth = useCallback(() => {
+    if (!authLoaded) throw new Error('Auth not ready');
+    if (!userId) throw new Error('User not authenticated');
+  }, [authLoaded, userId]);
 
-
-  // Fetch order by ID with full details
-  const fetchOrderById = useCallback(async (orderId: string): Promise<OrderWithDetails | null> => {
-    if (!userId) {
-      setError('User not authenticated');
-      return null;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/account/order/${orderId}`);
-      const result: ApiResponse<OrderDetails> = await response.json(); // FIX: Use OrderDetails type
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to fetch order details');
-      }
-
-      return result.data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch order details';
-      setError(errorMessage);
-      console.error('Error fetching order:', err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  // Fetch user orders with filters
-  const fetchOrders = useCallback(async (filters?: OrderFilters): Promise<OrderWithDetails[]> => {
-    if (!userId) {
-      setError('User not authenticated');
-      return [];
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const queryParams = new URLSearchParams();
-      
-      if (filters?.status) queryParams.append('status', filters.status);
-      if (filters?.payment_status) queryParams.append('payment_status', filters.payment_status);
-      if (filters?.date_from) queryParams.append('date_from', filters.date_from);
-      if (filters?.date_to) queryParams.append('date_to', filters.date_to);
-      if (filters?.page) queryParams.append('page', filters.page.toString());
-      if (filters?.limit) queryParams.append('limit', filters.limit.toString());
-
-      const response = await fetch(`/api/account/order?${queryParams.toString()}`);
-      const result: ApiResponse<PaginatedResponse<OrderSummary>> = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to fetch orders');
-      }
-
-      // For now, we'll use the summary data and fetch details for each order
-      // In a real app, you might want to adjust the API to return full details
-      const orderDetails = await Promise.all(
-        result.data.data.map(order => fetchOrderById(order.id))
-      );
-
-      const validOrders = orderDetails.filter((order): order is OrderWithDetails => order !== null);
-      setOrders(validOrders);
-      return validOrders;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch orders';
-      setError(errorMessage);
-      console.error('Error fetching orders:', err);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, fetchOrderById]); // FIX: Added fetchOrderById dependency
-
-  // Calculate checkout summary
-  const calculateCheckoutSummary = useCallback(async (): Promise<CheckoutSummary> => {
-    // FIX: Use cart state directly instead of fetchCart
-    if (!cartItems || cartItems.length === 0) {
-      return {
-        subtotal: 0,
-        shipping_cost: 0,
-        tax_amount: 0,
-        discount_amount: 0,
-        total_amount: 0,
-        items_count: 0,
-      };
-    }
-
-    const subtotal = cartTotal;
-    const shippingCost = subtotal > 500 ? 0 : 50;
-    const taxAmount = subtotal * 0.18;
-    const discountAmount = 0;
-    const totalAmount = subtotal + shippingCost + taxAmount - discountAmount;
+  const calculateSummary = useCallback(async (): Promise<CheckoutSummary> => {
+    const subtotal = Number(cartTotal ?? 0);
+    const shipping_cost = subtotal > 500 ? 0 : 50;
+    const tax_amount = subtotal * 0.18;
+    const discount_amount = 0;
+    const total_amount = subtotal + shipping_cost + tax_amount - discount_amount;
 
     return {
       subtotal,
-      shipping_cost: shippingCost,
-      tax_amount: taxAmount,
-      discount_amount: discountAmount,
-      total_amount: totalAmount,
-      items_count: cartCount,
+      shipping_cost,
+      tax_amount,
+      discount_amount,
+      total_amount,
+      items_count: cartCount ?? 0,
     };
-  }, [cartItems, cartTotal, cartCount]); // FIX: Use cart state dependencies
+  }, [cartTotal, cartCount]);
 
-  // Create order from cart
-  const createOrder = useCallback(async (orderData: CreateOrderInput): Promise<Order> => { // FIX: Added return type
-    if (!userId) throw new Error('User not authenticated');
-
+  const fetchOrders = useCallback(async (filters?: OrderFilters) => {
+    ensureAuth();
     try {
       setLoading(true);
       setError(null);
 
-      // FIX: Use cart state directly instead of fetchCart
+      let q = supabase
+        .from('orders')
+        .select(`
+          *,
+          shipping_address:addresses!orders_shipping_address_id_fkey(*),
+          billing_address:addresses!orders_billing_address_id_fkey(*),
+          order_items(*, product_variant:product_variants(*, product:products(*))),
+          order_payments(*),
+          order_status_history(*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (filters?.status) q = q.eq('order_status', filters.status);
+      if (filters?.payment_status) q = q.eq('payment_status', filters.payment_status);
+      if (filters?.date_from) q = q.gte('created_at', filters.date_from);
+      if (filters?.date_to) q = q.lte('created_at', filters.date_to);
+
+      const { data, error: fetchError } = await q;
+      if (fetchError) throw fetchError;
+
+      setOrders((data || []) as OrderWithDetails[]);
+      return (data || []) as OrderWithDetails[];
+    } catch (err) {
+      console.error('fetchOrders error', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, userId]);
+
+  // Fetch a single order by id with full details (returns null if not found / unauthorized)
+  const fetchOrderById = useCallback(async (orderId: string): Promise<OrderWithDetails | null> => {
+    try {
+      ensureAuth();
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          shipping_address:addresses!orders_shipping_address_id_fkey(*),
+          billing_address:addresses!orders_billing_address_id_fkey(*),
+          order_items(*, product_variant:product_variants(*, product:products(*))),
+          order_payments(*),
+          order_status_history(*)
+        `)
+        .eq('id', orderId)
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError) {
+        console.warn('fetchOrderById supabase error:', fetchError);
+        return null;
+      }
+
+      if (!data) return null;
+
+      return data as unknown as OrderWithDetails;
+    } catch (err) {
+      console.error('fetchOrderById error', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, userId]);
+
+  const createOrder = useCallback(async (input: CreateOrderInput): Promise<Order | null> => {
+    ensureAuth();
+    try {
+      setLoading(true);
+      setError(null);
+
       if (!cartItems || cartItems.length === 0) {
         throw new Error('Cart is empty');
       }
 
-      // Use the checkout API instead of direct order creation
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
-      });
+      const summary = await calculateSummary();
 
-      const result = await response.json();
+      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create order');
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          order_number: orderNumber,
+          user_id: userId,
+          shipping_address_id: input.shipping_address_id,
+          billing_address_id: input.billing_address_id,
+          subtotal: summary.subtotal,
+          shipping_cost: summary.shipping_cost,
+          tax_amount: summary.tax_amount,
+          discount_amount: summary.discount_amount,
+          total_amount: summary.total_amount,
+          currency: 'INR',
+          payment_method: input.payment_method,
+          payment_status: input.payment_method === 'cod' ? 'cod_pending' : 'pending',
+          order_status: 'pending',
+          notes: input.notes ?? null,
+        })
+        .select()
+        .single();
+
+      if (orderError || !order) {
+        console.error('Order insert failed', orderError);
+        throw orderError ?? new Error('Order creation failed');
       }
 
-      // Clear cart after successful order creation
-      await clearCart();
+      // build order_items payload from cartItems
+      const orderItemsPayload = cartItems.map(ci => {
+        const variant = ci.product_variant!;
+        const product = variant.product!;
+        const price_at_purchase = Number(product.base_price ?? 0) + Number(variant.price_adjustment ?? 0);
+        return {
+          order_id: order.id,
+          product_variant_id: variant.id,
+          product_name: product.name,
+          variant_sku: variant.sku,
+          size: variant.size,
+          color: variant.color,
+          price_at_purchase,
+          quantity: ci.quantity,
+          subtotal: price_at_purchase * ci.quantity,
+        };
+      });
 
-      return result.order;
+      if (orderItemsPayload.length > 0) {
+        const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload);
+        if (itemsError) {
+          // rollback
+          await supabase.from('orders').delete().eq('id', order.id);
+          throw itemsError;
+        }
+      }
+
+      // create initial status
+      await supabase.from('order_status_history').insert({
+        order_id: order.id,
+        status: 'pending',
+        notes: 'Order created',
+        changed_by: userId,
+      });
+
+      // clear cart if you have clearCart implementation
+      try {
+        await clearCart();
+      } catch (e) {
+        console.error('clearCart error', e);
+      }
+
+      // refresh orders list
+      void fetchOrders();
+
+      return order as Order;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create order';
-      setError(errorMessage);
-      console.error('Error creating order:', err);
+      console.error('createOrder error', err);
+      setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [userId, cartItems, clearCart]); // FIX: Updated dependencies
+  }, [ensureAuth, userId, cartItems, calculateSummary, fetchOrders, clearCart]);
 
-  // Get order status history
-  const getOrderStatusHistory = useCallback(async (orderId: string): Promise<OrderStatusHistoryItem[]> => { // FIX: Added return type
-    if (!userId) {
-      setError('User not authenticated');
-      return [];
-    }
-
-    try {
-      const order = await fetchOrderById(orderId);
-      return order?.status_history || []; // FIX: Now properly typed
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch status history';
-      setError(errorMessage);
-      console.error('Error fetching status history:', err);
-      return [];
-    }
-  }, [userId, fetchOrderById]);
-
-  // Cancel order (if allowed)
-  const cancelOrder = useCallback(async (orderId: string, reason?: string) => {
-    if (!userId) throw new Error('User not authenticated');
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/account/order/${orderId}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason: reason || 'Order cancelled by user' }),
-      });
-
-      const result: ApiResponse<{ message: string }> = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to cancel order');
-      }
-
-      // Update local state
-      setOrders(prev => prev.map(order => 
-        order.id === orderId 
-          ? { ...order, order_status: 'cancelled' }
-          : order
-      ));
-
-      await fetchOrders(); // Refresh orders list
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel order';
-      setError(errorMessage);
-      console.error('Error cancelling order:', err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, fetchOrders]);
-
-  // Track order
-  const trackOrder = useCallback(async (orderId: string) => {
-    const order = await fetchOrderById(orderId);
-    const statusHistory = await getOrderStatusHistory(orderId);
-    
-    return {
-      order,
-      statusHistory,
-      currentStatus: order?.order_status,
-      estimatedDelivery: calculateEstimatedDelivery(order?.created_at),
-    };
-  }, [fetchOrderById, getOrderStatusHistory]);
-
-  // Return order (if applicable)
-  const returnOrder = useCallback(async (orderId: string, reason: string) => {
-    if (!userId) throw new Error('User not authenticated');
-
+  // ---------------------------
+  // cancelOrder implementation
+  // ---------------------------
+  const cancelOrder = useCallback(async (orderId: string, reason?: string): Promise<void> => {
+    ensureAuth();
     try {
       setLoading(true);
       setError(null);
 
-      // For a full implementation, you'd need to specify which items to return
-      // For now, we'll return all items
-      const order = await fetchOrderById(orderId);
-      const returnItems = order?.order_items.map(item => ({
-        order_item_id: item.id,
-        quantity: item.quantity
-      })) || [];
+      // fetch minimal order to check status & ownership
+      const { data: orderRow, error: fetchError } = await supabase
+        .from('orders')
+        .select('id, order_status, payment_status, user_id')
+        .eq('id', orderId)
+        .eq('user_id', userId)
+        .single();
 
-      const response = await fetch(`/api/account/order/${orderId}/return`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          items: returnItems, 
-          reason 
-        }),
-      });
-
-      const result: ApiResponse<{ message: string; return_id?: string }> = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to process return');
+      if (fetchError) {
+        throw fetchError;
+      }
+      if (!orderRow) {
+        throw new Error('Order not found');
       }
 
-      // Update local state
-      setOrders(prev => prev.map(order => 
-        order.id === orderId 
-          ? { ...order, order_status: 'returned' }
-          : order
-      ));
+      const currentStatus = orderRow.order_status as OrderStatus;
 
-      await fetchOrders(); // Refresh orders list
+      const cancellableStatuses: OrderStatus[] = ['pending', 'confirmed', 'processing'];
+      if (!cancellableStatuses.includes(currentStatus)) {
+        throw new Error(`Order cannot be cancelled from status: ${currentStatus}`);
+      }
+
+      // update order status
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          order_status: 'cancelled',
+          updated_at: new Date().toISOString(),
+          updated_by: userId,
+        })
+        .eq('id', orderId)
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // insert into status history
+      const { error: historyError } = await supabase
+        .from('order_status_history')
+        .insert({
+          order_id: orderId,
+          status: 'cancelled',
+          notes: reason ?? 'Cancelled by user',
+          changed_by: userId,
+        });
+
+      if (historyError) {
+        console.error('Failed to write order_status_history for cancel:', historyError);
+      }
+
+      // optimistic local update
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: 'cancelled' } : o));
+
+      // NOTE: if payment was already completed, create refund workflow (out-of-scope here).
+      return;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to process return';
-      setError(errorMessage);
-      console.error('Error processing return:', err);
+      console.error('cancelOrder error', err);
+      setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [userId, fetchOrderById, fetchOrders]);
+  }, [ensureAuth, userId]);
 
-  // Helper function to calculate estimated delivery
-  const calculateEstimatedDelivery = (orderDate?: string): string => {
-    if (!orderDate) return 'Not available';
-    
-    const order = new Date(orderDate);
-    const estimated = new Date(order.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return estimated.toLocaleDateString();
-  };
+  // ---------------------------
+  // returnOrder implementation
+  // ---------------------------
+  const returnOrder = useCallback(async (orderId: string, reason: string): Promise<void> => {
+    ensureAuth();
+    try {
+      setLoading(true);
+      setError(null);
 
-  const refetch = useCallback(async (): Promise<OrderWithDetails[]> => {
-    return await fetchOrders();
-  }, [fetchOrders]);
+      // fetch order and status history to determine delivered date / ownership
+      const { data: orderRow, error: fetchError } = await supabase
+        .from('orders')
+        .select('id, order_status, total_amount, user_id, updated_at')
+        .eq('id', orderId)
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+      if (!orderRow) {
+        throw new Error('Order not found');
+      }
+
+      if (orderRow.order_status !== 'delivered') {
+        throw new Error('Only delivered orders can be returned');
+      }
+
+      // determine delivered date - prefer order_status_history record with 'delivered' status
+      const { data: historyRows, error: historyFetchError } = await supabase
+        .from('order_status_history')
+        .select('created_at, status')
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: true });
+
+      if (historyFetchError) {
+        console.warn('Could not fetch order_status_history to compute delivered date:', historyFetchError);
+      }
+
+      let deliveredAt: Date | null = null;
+      if (historyRows && Array.isArray(historyRows)) {
+        const deliveredRecord = (historyRows as OrderStatusHistoryItem[]).reverse().find(h => h.status === 'delivered');
+        if (deliveredRecord && deliveredRecord.created_at) {
+          deliveredAt = new Date(deliveredRecord.created_at);
+        }
+      }
+
+      // fallback to orders.updated_at if no history delivered timestamp
+      if (!deliveredAt && orderRow.updated_at) {
+        deliveredAt = new Date(orderRow.updated_at);
+      }
+
+      if (!deliveredAt) {
+        throw new Error('Cannot determine delivery date for return window calculation');
+      }
+
+      const now = new Date();
+      const daysSinceDelivery = Math.floor((now.getTime() - deliveredAt.getTime()) / (1000 * 60 * 60 * 24));
+      const returnWindowDays = 7;
+      if (daysSinceDelivery > returnWindowDays) {
+        throw new Error(`Return window of ${returnWindowDays} days has expired`);
+      }
+
+      // update order status to 'returned'
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          order_status: 'returned',
+          updated_at: new Date().toISOString(),
+          updated_by: userId,
+        })
+        .eq('id', orderId)
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // insert status history
+      const { error: historyInsertError } = await supabase
+        .from('order_status_history')
+        .insert({
+          order_id: orderId,
+          status: 'returned',
+          notes: `Return requested: ${reason}`,
+          changed_by: userId,
+        });
+      if (historyInsertError) {
+        console.error('Failed to write order_status_history for return:', historyInsertError);
+      }
+
+      // optimistic local update
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: 'returned' } : o));
+
+      // NOTE: refund handling (if payment was captured) should be performed by a backend job/admin process.
+      return;
+    } catch (err) {
+      console.error('returnOrder error', err);
+      setError(err instanceof Error ? err.message : String(err));
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, userId]);
+
+  // ---------------------------
+  // trackOrder implementation
+  // ---------------------------
+  const trackOrder = useCallback(async (orderId: string): Promise<{
+    order: OrderWithDetails | null;
+    statusHistory: OrderStatusHistoryItem[];
+    currentStatus?: OrderStatus;
+    estimatedDelivery: string;
+  }> => {
+    ensureAuth();
+    try {
+      setLoading(true);
+      setError(null);
+
+      // fetch order with relations using existing function (ownership enforced)
+      const order = await fetchOrderById(orderId);
+      if (!order) {
+        return {
+          order: null,
+          statusHistory: [],
+          currentStatus: undefined,
+          estimatedDelivery: 'Not available',
+        };
+      }
+
+      // fetch status history (always fetch fresh)
+      const { data: statusHistoryData, error: historyError } = await supabase
+        .from('order_status_history')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: true });
+
+      if (historyError) {
+        console.warn('trackOrder: failed to fetch status history', historyError);
+      }
+
+      const statusHistory = (statusHistoryData || []) as OrderStatusHistoryItem[];
+
+      const currentStatus = order.order_status as OrderStatus | undefined;
+
+      // estimated delivery:
+      // - If there is a 'shipped' record, add 3 days
+      // - else use created_at + 7 days
+      let estimatedDelivery = 'Not available';
+      const shippedRecord = statusHistory.slice().reverse().find(s => s.status === 'shipped');
+      if (shippedRecord && shippedRecord.created_at) {
+        const shippedAt = new Date(shippedRecord.created_at);
+        const est = new Date(shippedAt.getTime() + 3 * 24 * 60 * 60 * 1000);
+        estimatedDelivery = est.toLocaleDateString();
+      } else if (order.created_at) {
+        const created = new Date(order.created_at);
+        const est = new Date(created.getTime() + 7 * 24 * 60 * 60 * 1000);
+        estimatedDelivery = est.toLocaleDateString();
+      }
+
+      return {
+        order,
+        statusHistory,
+        currentStatus,
+        estimatedDelivery,
+      };
+    } catch (err) {
+      console.error('trackOrder error', err);
+      setError(err instanceof Error ? err.message : String(err));
+      return {
+        order: null,
+        statusHistory: [],
+        currentStatus: undefined,
+        estimatedDelivery: 'Not available',
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, fetchOrderById]);
 
   return {
     orders,
@@ -347,11 +473,10 @@ export const useOrder = (): UseOrderReturn => {
     fetchOrders,
     fetchOrderById,
     createOrder,
-    getOrderStatusHistory,
+    calculateSummary,
     cancelOrder,
-    trackOrder,
     returnOrder,
-    calculateCheckoutSummary,
-    refetch,
+    trackOrder,
+    refetch: fetchOrders,
   };
-};
+}

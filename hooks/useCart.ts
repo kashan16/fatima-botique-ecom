@@ -102,7 +102,7 @@ export function useCart(): UseCartReturn {
   const [error, setError] = useState<string | null>(null);
 
   // Calculate derived values
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const cartCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
   const cartTotal = cartItems.reduce((total, item) => {
     if (!item.product_variant) return total;
     
@@ -187,6 +187,38 @@ export function useCart(): UseCartReturn {
     }
   }, [userId, fetchCart]);
 
+
+
+  // Remove item from cart
+  const removeFromCart = useCallback(async (cartItemId: string) => {
+    if (!userId) {
+      setError('You must be logged in to remove items from cart');
+      return;
+    }
+
+    try {
+      setError(null);
+
+      // Optimistic update
+      setCartItems(prev => prev.filter(item => item.id !== cartItemId));
+
+      const response = await fetch(`/api/cart/${cartItemId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove item from cart');
+      }
+    } catch (err) {
+      console.error('Error removing from cart:', err);
+      setError(err instanceof Error ? err.message : 'Failed to remove item from cart');
+      
+      // Revert optimistic update on error
+      await fetchCart();
+      throw err;
+    }
+  }, [userId, fetchCart]);
+
   // Update item quantity
   const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
     if (!userId) {
@@ -232,37 +264,8 @@ export function useCart(): UseCartReturn {
       await fetchCart();
       throw err;
     }
-  }, [userId, fetchCart]);
+  }, [userId, fetchCart,removeFromCart]);
 
-  // Remove item from cart
-  const removeFromCart = useCallback(async (cartItemId: string) => {
-    if (!userId) {
-      setError('You must be logged in to remove items from cart');
-      return;
-    }
-
-    try {
-      setError(null);
-
-      // Optimistic update
-      setCartItems(prev => prev.filter(item => item.id !== cartItemId));
-
-      const response = await fetch(`/api/cart/${cartItemId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to remove item from cart');
-      }
-    } catch (err) {
-      console.error('Error removing from cart:', err);
-      setError(err instanceof Error ? err.message : 'Failed to remove item from cart');
-      
-      // Revert optimistic update on error
-      await fetchCart();
-      throw err;
-    }
-  }, [userId, fetchCart]);
 
   // Move item to save for later
   const moveToSaveForLater = useCallback(async (cartItemId: string) => {

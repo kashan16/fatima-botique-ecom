@@ -1,265 +1,231 @@
-import { UserProfile } from "@/types";
-import { useUser } from "@clerk/nextjs";
-import { useCallback, useEffect, useState } from "react";
+// hooks/useProfile.ts
+'use client';
 
-interface MergedProfile {
-  // From Clerk
-  clerk_id: string;
-  email: string;
-  full_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  profile_image_url: string | null;
-    
-  // From Supabase
-  profile_id: string | null;
-  username: string | null;
-  phone_number: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-    
-  // Computed
-  has_complete_profile: boolean;
-  missing_fields: string[];
+import { supabase } from '@/lib/client';
+import type { UserProfile } from '@/types';
+import { useAuth } from '@clerk/nextjs';
+import { useCallback, useEffect, useState } from 'react';
+
+export interface UseProfileReturn {
+  profile: UserProfile | null;
+  loading: boolean;
+  error: string | null;
+
+  // Actions
+  fetchProfile: () => Promise<UserProfile | null>;
+  createProfile: (payload: { username?: string | null; phone_number?: string | null }) => Promise<UserProfile>;
+  updateProfile: (payload: { username?: string | null; phone_number?: string | null }) => Promise<UserProfile>;
+  deleteProfile: () => Promise<void>;
+  refresh: () => Promise<UserProfile | null>;
 }
 
-export function useProfile() {
-  const { user, isLoaded: isClerkLoaded } = useUser();
-  const [ profile, setProfile ] = useState<UserProfile | null>(null);
-  const [ mergedProfile, setMergedProfile ] = useState<MergedProfile | null>(null);
-  const [ isLoading, setIsLoading ] = useState(false);
-  const [ error, setError ] = useState<string | null>(null);
+/**
+ * Robust hook for CRUD on user_profile table.
+ * - Uses upsert for create/update to work reliably (requires unique index on user_id).
+ * - Surfaces Supabase error.message/details in `error`.
+ * - Does not attempt operations until auth is loaded and userId exists.
+ */
+export function useProfile(): UseProfileReturn {
+  const { userId, isLoaded: authLoaded } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  //fetch profile from API
-  const fetchProfile = useCallback(async () => {
-    if(!user?.id) return null;
-    setIsLoading(true);
-    setError(null);
+  const ensureAuth = useCallback(() => {
+    if (!authLoaded) throw new Error('Auth not ready');
+    if (!userId) throw new Error('User not authenticated');
+  }, [authLoaded, userId]);
 
-    try {
-      const response = await fetch('/api/account/profile');
-      if(!response.ok) {
-        throw new Error('Failed to fetch profile');
-      }
-
-      const data = await response.json();
-      if(data.exists && data.profile) {
-        setProfile(data.profile);
-      } else {
-        setProfile(null);
-        return null;
-      }
-    } catch(err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch profile';
-      setError(errorMessage);
-      console.error('Error fetching profile : ', err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id])
-
-  //Initialize profile(create if doesn't exist)
-  const initializeProfile = useCallback(async () => {
-    if(user?.id) return null;
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/account/profile/initialize', {
-        method : 'POST'
-      });
-
-      if(!response.ok) {
-        throw new Error('Failed to initialize profile');
-      }
-
-      const data = await response.json();
-      setProfile(data.profile);
-      return data.profile;
-    } catch(err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initilize profile';
-      setError(errorMessage);
-      console.error('Error initializing profile : ', err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id])
-
-const updateProfile = useCallback(async (updates: {
-    username?: string;
-    phone_number?: string;
-  }): Promise<boolean> => {
-    if (!user?.id) {
-      setError('User not authenticated');
-      return false;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/account/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile');
-      }
-
-      const data = await response.json();
-      setProfile(data.profile);
-      
-      // Update merged profile
-      if (mergedProfile) {
-        setMergedProfile({
-          ...mergedProfile,
-          username: data.profile.username,
-          phone_number: data.profile.phone_number,
-          updated_at: data.profile.updated_at
-        });
-      }
-      
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
-      setError(errorMessage);
-      console.error('Error updating profile:', err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id, mergedProfile]);
-
-  // Update phone number specifically
-  const updatePhoneNumber = useCallback(async (phoneNumber: string): Promise<boolean> => {
-    return updateProfile({ phone_number: phoneNumber });
-  }, [updateProfile]);
-
-  // Update username specifically
-  const updateUsername = useCallback(async (username: string): Promise<boolean> => {
-    return updateProfile({ username });
-  }, [updateProfile]);
-
-  // Merge Clerk data with Supabase profile
-  const mergProfileData = useCallback(() => {
-    if (!user || !isClerkLoaded) {
-      setMergedProfile(null);
-      return;
-    }
-
-    const missingFields: string[] = [];
-    if (!profile?.username) missingFields.push('username');
-    if (!profile?.phone_number) missingFields.push('phone_number');
-
-    const merged: MergedProfile = {
-      // Clerk data
-      clerk_id: user.id,
-      email: user.primaryEmailAddress?.emailAddress || '',
-      full_name: user.fullName,
-      first_name: user.firstName,
-      last_name: user.lastName,
-      profile_image_url: user.imageUrl,
-      
-      // Supabase data
-      profile_id: profile?.id || null,
-      username: profile?.username || null,
-      phone_number: profile?.phone_number || null,
-      created_at: profile?.created_at || null,
-      updated_at: profile?.updated_at || null,
-      
-      // Computed
-      has_complete_profile: missingFields.length === 0,
-      missing_fields: missingFields
-    };
-
-    setMergedProfile(merged);
-  }, [user, isClerkLoaded, profile]);
-
-  // Check if phone number is required and not set
-  const isPhoneNumberRequired = useCallback((): boolean => {
-    return !profile?.phone_number;
-  }, [profile]);
-
-  // Validate profile data before submission
-  const validateProfileData = useCallback((data: {
-    username?: string;
-    phone_number?: string;
-  }): { isValid: boolean; errors: string[] } => {
-    const errors: string[] = [];
-
-    if (data.username !== undefined) {
-      if (data.username.length < 3) {
-        errors.push('Username must be at least 3 characters long');
-      }
-      if (data.username.length > 30) {
-        errors.push('Username must be less than 30 characters');
-      }
-      if (!/^[a-zA-Z0-9_]+$/.test(data.username)) {
-        errors.push('Username can only contain letters, numbers, and underscores');
-      }
-    }
-
-    if (data.phone_number !== undefined) {
-      const cleanPhone = data.phone_number.replace(/\D/g, '');
-      if (cleanPhone.length !== 10) {
-        errors.push('Phone number must be 10 digits');
-      }
-      if (!/^[6-9]/.test(cleanPhone)) {
-        errors.push('Phone number must start with 6, 7, 8, or 9');
-      }
-    }
-
+  const normalizeRow = useCallback((row: UserProfile): UserProfile => {
     return {
-      isValid: errors.length === 0,
-      errors
+      id: String(row.id),
+      user_id: String(row.user_id),
+      username: row.username ?? null,
+      phone_number: row.phone_number ?? null,
+      created_at: String(row.created_at),
+      updated_at: String(row.updated_at),
     };
   }, []);
 
-  // Auto-fetch profile when user loads
-  useEffect(() => {
-    if (isClerkLoaded && user) {
-      fetchProfile();
-    } else if (isClerkLoaded && !user) {
-      setProfile(null);
-      setMergedProfile(null);
-    }
-  }, [isClerkLoaded, user, fetchProfile]);
+  const fetchProfile = useCallback(async (): Promise<UserProfile | null> => {
+    try {
+      ensureAuth();
+      setLoading(true);
+      setError(null);
 
-  // Merge data when profile or user changes
+      const { data, error: fetchErr } = await supabase
+        .from('user_profile')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (fetchErr) {
+        // Surface Supabase error details for easier debugging
+        const msg = (fetchErr.message ?? JSON.stringify(fetchErr)) as string;
+        setError(msg);
+        throw fetchErr;
+      }
+
+      if (!data) {
+        setProfile(null);
+        return null;
+      }
+
+      const normalized = normalizeRow(data);
+      setProfile(normalized);
+      return normalized;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch profile';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, normalizeRow, userId]);
+
+  /**
+   * createProfile: inserts a new profile row.
+   * We prefer upsert (onConflict: 'user_id') so if the row exists it will be returned/updated.
+   * NOTE: upsert requires a UNIQUE constraint on user_profile.user_id (see SQL above).
+   */
+  const createProfile = useCallback(async (payload: { username?: string | null; phone_number?: string | null }): Promise<UserProfile> => {
+    try {
+      ensureAuth();
+      setLoading(true);
+      setError(null);
+
+      const insertObj = {
+        user_id: userId,
+        username: payload.username ?? null,
+        phone_number: payload.phone_number ?? null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: created, error: insertErr } = await supabase
+        .from('user_profile')
+        // upsert will perform insert or update when conflict on user_id occurs
+        .upsert(insertObj, { onConflict: 'user_id' })
+        .select()
+        .maybeSingle();
+
+      if (insertErr) {
+        console.error('Supabase insert error:', insertErr);
+        setError(insertErr.message ?? JSON.stringify(insertErr));
+        throw insertErr;
+      }
+      if (!created) {
+        const msg = 'Failed to create profile: no row returned';
+        setError(msg);
+        throw new Error(msg);
+      }
+
+      const normalized = normalizeRow(created);
+      setProfile(normalized);
+      return normalized;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to create profile';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, normalizeRow, userId]);
+
+  /**
+   * updateProfile: uses upsert to update or create when necessary.
+   * This avoids the "profile missing" failure mode.
+   */
+  const updateProfile = useCallback(async (payload: { username?: string | null; phone_number?: string | null }): Promise<UserProfile> => {
+    try {
+      ensureAuth();
+      setLoading(true);
+      setError(null);
+
+      const upsertObj = {
+        user_id: userId,
+        username: payload.username ?? null,
+        phone_number: payload.phone_number ?? null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: updated, error: upsertErr } = await supabase
+        .from('user_profile')
+        .upsert(upsertObj, { onConflict: 'user_id' })
+        .select()
+        .maybeSingle();
+
+      if (upsertErr) {
+        console.error('Supabase upsert error:', upsertErr);
+        setError(upsertErr.message ?? JSON.stringify(upsertErr));
+        throw upsertErr;
+      }
+      if (!updated) {
+        const msg = 'Failed to update profile: no row returned';
+        setError(msg);
+        throw new Error(msg);
+      }
+
+      const normalized = normalizeRow(updated);
+      setProfile(normalized);
+      return normalized;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update profile';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, normalizeRow, userId]);
+
+  const deleteProfile = useCallback(async (): Promise<void> => {
+    try {
+      ensureAuth();
+      setLoading(true);
+      setError(null);
+
+      const { error: deleteErr } = await supabase
+        .from('user_profile')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteErr) {
+        console.error('Supabase delete error:', deleteErr);
+        setError(deleteErr.message ?? JSON.stringify(deleteErr));
+        throw deleteErr;
+      }
+
+      setProfile(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete profile';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureAuth, userId]);
+
+  // initial load once auth is ready
   useEffect(() => {
-    mergProfileData();
-  }, [mergProfileData]);
+    if (!authLoaded) return;
+    if (!userId) {
+      setProfile(null);
+      return;
+    }
+    void fetchProfile();
+  }, [authLoaded, userId, fetchProfile]);
+
+  const refresh = useCallback(async () => {
+    return fetchProfile();
+  }, [fetchProfile]);
 
   return {
-    // Data
     profile,
-    mergedProfile,
-    clerkUser: user,
-    
-    // Loading states
-    isLoading,
-    isClerkLoaded,
-    
-    // Error
+    loading,
     error,
-    
-    // Methods
     fetchProfile,
-    initializeProfile,
+    createProfile,
     updateProfile,
-    updatePhoneNumber,
-    updateUsername,
-    isPhoneNumberRequired,
-    validateProfileData,
-    
-    // Convenience
-    refetch: fetchProfile
-  };  
+    deleteProfile,
+    refresh,
+  };
 }
