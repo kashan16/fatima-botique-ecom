@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // hooks/useProduct.ts
 import { supabase } from '@/lib/client';
 import {
-  Product,
   ProductFilters,
   ProductImage,
   ProductSortOptions,
@@ -11,7 +11,7 @@ import {
 import { useCallback, useState } from 'react';
 
 interface UseProductReturn {
-  products: Product[];
+  products: ProductWithDetails[];
   productDetails: ProductWithDetails | null;
   variants: ProductVariant[];
   images: ProductImage[];
@@ -19,28 +19,36 @@ interface UseProductReturn {
   error: string | null;
 
   // Read operations
-  listProducts: (filters?: ProductFilters, sort?: ProductSortOptions) => Promise<Product[] | null>;
+  listProducts: (filters?: ProductFilters, sort?: ProductSortOptions) => Promise<ProductWithDetails[] | null>;
   getProductById: (id: string) => Promise<ProductWithDetails | null>;
   getProductBySlug: (slug: string) => Promise<ProductWithDetails | null>;
-  searchProducts: (q: string) => Promise<Product[] | null>;
+  searchProducts: (q: string) => Promise<ProductWithDetails[] | null>;
+  getProductsByCategory: (categorySlug: string) => Promise<ProductWithDetails[] | null>;
   getVariantsForProduct: (productId: string) => Promise<ProductVariant[] | null>;
   getImagesForProduct: (productId: string) => Promise<ProductImage[] | null>;
-  getRelatedProducts: (productId: string, limit?: number) => Promise<Product[]>;
+  getRelatedProducts: (productId: string, limit?: number) => Promise<ProductWithDetails[]>;
   checkVariantAvailability: (variantId: string) => boolean;
   clearProductDetails: () => void;
 }
 
 export const useProduct = (): UseProductReturn => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithDetails[]>([]);
   const [productDetails, setProductDetails] = useState<ProductWithDetails | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper to build base product query
+  // Helper to build base product query with variants and images
   const buildProductQuery = (filters?: ProductFilters, sort?: ProductSortOptions) => {
-    let q = supabase.from('products').select('*, category:categories(*)');
+    let q = supabase
+      .from('products')
+      .select(`
+        *,
+        category:categories(*),
+        product_variants(*),
+        product_images(*)
+      `);
 
     if (filters) {
       if (filters.category_id) q = q.eq('category_id', filters.category_id);
@@ -56,21 +64,73 @@ export const useProduct = (): UseProductReturn => {
     return q;
   };
 
+  // Helper to transform database response to ProductWithDetails
+  const transformToProductWithDetails = (data: any[]): ProductWithDetails[] => {
+    return data.map(item => ({
+      ...item,
+      variants: item.product_variants || [],
+      images: item.product_images || [],
+      category: item.category
+    }));
+  };
+
   const listProducts = useCallback(async (filters?: ProductFilters, sort?: ProductSortOptions) => {
     setLoading(true);
     setError(null);
     try {
       const q = buildProductQuery(filters, sort);
-      // debug
-      // console.debug('[useProduct] listProducts', { filters, sort });
+      console.debug('[useProduct] listProducts', { filters, sort });
+      
       const { data, error: fetchError } = await q;
       if (fetchError) throw fetchError;
-      const arr: Product[] = data || [];
-      setProducts(arr);
-      return arr;
+      
+      const productsWithDetails = transformToProductWithDetails(data || []);
+      setProducts(productsWithDetails);
+      return productsWithDetails;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error listing products');
       console.error('listProducts error', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getProductsByCategory = useCallback(async (categorySlug: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // First get the category by slug
+      const { data: category, error: categoryError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', categorySlug)
+        .single();
+
+      if (categoryError) throw categoryError;
+      if (!category) throw new Error('Category not found');
+
+      // Then get products for this category
+      const { data, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          *,
+          category:categories(*),
+          product_variants(*),
+          product_images(*)
+        `)
+        .eq('category_id', category.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (productsError) throw productsError;
+      
+      const productsWithDetails = transformToProductWithDetails(data || []);
+      setProducts(productsWithDetails);
+      return productsWithDetails;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching products by category');
+      console.error('getProductsByCategory error', err);
       return null;
     } finally {
       setLoading(false);
@@ -83,38 +143,27 @@ export const useProduct = (): UseProductReturn => {
     try {
       const { data: product, error: productError } = await supabase
         .from('products')
-        .select('*, category:categories(*)')
+        .select(`
+          *,
+          category:categories(*),
+          product_variants(*),
+          product_images(*)
+        `)
         .eq('slug', slug)
         .single();
 
       if (productError) throw productError;
-      // fetch variants
-      const { data: variantsData, error: variantsError } = await supabase
-        .from('product_variants')
-        .select('*')
-        .eq('product_id', product.id)
-        .order('size', { ascending: true });
-
-      if (variantsError) throw variantsError;
-
-      // fetch images
-      const { data: imagesData, error: imagesError } = await supabase
-        .from('product_images')
-        .select('*')
-        .eq('product_id', product.id)
-        .order('display_order', { ascending: true });
-
-      if (imagesError) throw imagesError;
 
       const productWithDetails: ProductWithDetails = {
         ...product,
-        variants: variantsData || [],
-        images: imagesData || [],
+        variants: product.product_variants || [],
+        images: product.product_images || [],
+        category: product.category
       };
 
       setProductDetails(productWithDetails);
-      setVariants(variantsData || []);
-      setImages(imagesData || []);
+      setVariants(product.product_variants || []);
+      setImages(product.product_images || []);
 
       return productWithDetails;
     } catch (err) {
@@ -132,37 +181,27 @@ export const useProduct = (): UseProductReturn => {
     try {
       const { data: product, error: productError } = await supabase
         .from('products')
-        .select('*, category:categories(*)')
+        .select(`
+          *,
+          category:categories(*),
+          product_variants(*),
+          product_images(*)
+        `)
         .eq('id', id)
         .single();
 
       if (productError) throw productError;
 
-      const { data: variantsData, error: variantsError } = await supabase
-        .from('product_variants')
-        .select('*')
-        .eq('product_id', id)
-        .order('size', { ascending: true });
-
-      if (variantsError) throw variantsError;
-
-      const { data: imagesData, error: imagesError } = await supabase
-        .from('product_images')
-        .select('*')
-        .eq('product_id', id)
-        .order('display_order', { ascending: true });
-
-      if (imagesError) throw imagesError;
-
       const productWithDetails: ProductWithDetails = {
         ...product,
-        variants: variantsData || [],
-        images: imagesData || [],
+        variants: product.product_variants || [],
+        images: product.product_images || [],
+        category: product.category
       };
 
       setProductDetails(productWithDetails);
-      setVariants(variantsData || []);
-      setImages(imagesData || []);
+      setVariants(product.product_variants || []);
+      setImages(product.product_images || []);
 
       return productWithDetails;
     } catch (err) {
@@ -179,18 +218,24 @@ export const useProduct = (): UseProductReturn => {
     setError(null);
     try {
       if (!qstr || !qstr.trim()) return [];
-      const escaped = qstr.replace(/%/g, '\\%').replace(/'/g, "''");
+      
       const { data, error: searchError } = await supabase
         .from('products')
-        .select('*, category:categories(*)')
-        .or(`name.ilike.%${escaped}%,description.ilike.%${escaped}%`)
+        .select(`
+          *,
+          category:categories(*),
+          product_variants(*),
+          product_images(*)
+        `)
+        .or(`name.ilike.%${qstr}%,description.ilike.%${qstr}%`)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (searchError) throw searchError;
-      const arr: Product[] = data || [];
-      setProducts(arr);
-      return arr;
+      
+      const productsWithDetails = transformToProductWithDetails(data || []);
+      setProducts(productsWithDetails);
+      return productsWithDetails;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error searching products');
       console.error('searchProducts error', err);
@@ -200,6 +245,7 @@ export const useProduct = (): UseProductReturn => {
     }
   }, []);
 
+  // Keep the individual fetch functions for specific use cases
   const getVariantsForProduct = useCallback(async (productId: string) => {
     setLoading(true);
     setError(null);
@@ -262,14 +308,20 @@ export const useProduct = (): UseProductReturn => {
 
       const { data, error: relatedError } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          category:categories(*),
+          product_variants(*),
+          product_images(*)
+        `)
         .eq('category_id', categoryId)
         .eq('is_active', true)
         .neq('id', productId)
         .limit(limit);
 
       if (relatedError) throw relatedError;
-      return data || [];
+      
+      return transformToProductWithDetails(data || []);
     } catch (err) {
       console.error('getRelatedProducts error', err);
       setError(err instanceof Error ? err.message : 'Error fetching related products');
@@ -302,6 +354,7 @@ export const useProduct = (): UseProductReturn => {
     getProductById,
     getProductBySlug,
     searchProducts,
+    getProductsByCategory,
     getVariantsForProduct,
     getImagesForProduct,
     getRelatedProducts,

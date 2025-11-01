@@ -35,6 +35,7 @@ export const ProductsPage = () => {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -52,6 +53,7 @@ export const ProductsPage = () => {
   useEffect(() => {
     setQuantity(1);
     setCurrentImageIndex(0);
+    setImageLoading(true);
     if (productDetails && productDetails.variants.length > 0) {
       setSelectedVariant(productDetails.variants[0]);
     } else {
@@ -69,9 +71,17 @@ export const ProductsPage = () => {
     return Array.from(new Set(productDetails.variants?.map((v: ProductVariant) => v.color) || []));
   }, [productDetails]);
 
+  /*const allImages = useMemo(() => {
+    if (!productDetails) return [];
+    return productDetails.images || [];
+  }, [productDetails]);*/
+
   const primaryImages = useMemo(() => {
     if (!productDetails) return [];
-    return productDetails.images?.filter((img: ProductImage) => img.view_type === 'front') || productDetails.images || [];
+    // If we have specific view types, use front view first, then others
+    const frontImages = productDetails.images?.filter((img: ProductImage) => img.view_type === 'front') || [];
+    const otherImages = productDetails.images?.filter((img: ProductImage) => img.view_type !== 'front') || [];
+    return [...frontImages, ...otherImages];
   }, [productDetails]);
 
   const handleSizeSelect = (size: string) => {
@@ -122,7 +132,6 @@ export const ProductsPage = () => {
       toast.success(`${quantity} x ${productDetails?.name} added to cart!`);
     } catch (error) {
       console.error('Failed to add to cart:', error);
-      // Error toast is handled by the hook
     }
   };
 
@@ -149,7 +158,6 @@ export const ProductsPage = () => {
       router.push('/checkout');
     } catch (error) {
       console.error('Failed to add to cart for buy now:', error);
-      // Error toast is handled by the hook
     }
   };
 
@@ -173,7 +181,6 @@ export const ProductsPage = () => {
       }
     } catch (error) {
       console.error('Failed to toggle wishlist:', error);
-      // Error toast is handled by the hook
     }
   };
 
@@ -187,6 +194,14 @@ export const ProductsPage = () => {
     if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) return trimmed;
     if (trimmed.startsWith('/')) return trimmed;
     return `/${trimmed.replace(/^\/+/, '')}`;
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
   };
 
   if (loading) {
@@ -250,19 +265,30 @@ export const ProductsPage = () => {
 
         <Card className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 p-8 lg:p-12">
-            {/* Image Gallery */}
+            {/* Image Gallery - Fixed Size Container */}
             <div className="space-y-6">
-              {/* Main Image */}
-              <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+              {/* Main Image Container - Fixed Size */}
+              <div className="relative h-[500px] w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
                 {primaryImages.length > 0 ? (
-                  <Image
-                    src={safeImageSrc(primaryImages[currentImageIndex]?.object_path)}
-                    alt={productDetails.name}
-                    fill
-                    className="object-cover transition-opacity duration-300 ease-in-out hover:opacity-90"
-                    priority={currentImageIndex === 0}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
+                  <>
+                    {imageLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                      </div>
+                    )}
+                    <Image
+                      src={safeImageSrc(primaryImages[currentImageIndex]?.object_path)}
+                      alt={productDetails.name}
+                      width={500}
+                      height={500}
+                      className={`object-contain w-full h-full transition-opacity duration-300 ${
+                        imageLoading ? 'opacity-0' : 'opacity-100'
+                      }`}
+                      priority={currentImageIndex === 0}
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                  </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
                     <Plus className="w-16 h-16 text-gray-300" />
@@ -271,15 +297,17 @@ export const ProductsPage = () => {
                 )}
               </div>
 
-              {/* Thumbnail Images */}
+              {/* Thumbnail Images - Fixed Size */}
               {primaryImages.length > 1 && (
                 <div className="grid grid-cols-4 gap-3">
                   {primaryImages.map((image: ProductImage, index: number) => (
-                    <Button
+                    <button
                       key={image.id}
-                      variant="ghost"
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`relative aspect-square p-0 h-auto rounded-md overflow-hidden transition-all duration-200 border-2 ${
+                      onClick={() => {
+                        setCurrentImageIndex(index);
+                        setImageLoading(true);
+                      }}
+                      className={`relative h-24 w-full bg-gray-100 rounded-md overflow-hidden border-2 transition-all duration-200 ${
                         currentImageIndex === index
                           ? 'border-gray-900 shadow-md'
                           : 'border-transparent hover:border-gray-300'
@@ -288,14 +316,14 @@ export const ProductsPage = () => {
                       <Image
                         src={safeImageSrc(image.object_path)}
                         alt={`${productDetails.name} view ${index + 1}`}
-                        fill
-                        className="object-cover rounded-md opacity-80 hover:opacity-100 transition-opacity"
-                        sizes="100px"
+                        width={96}
+                        height={96}
+                        className="object-cover w-full h-full"
                       />
                       {currentImageIndex === index && (
                         <div className="absolute inset-0 bg-gray-900/10 backdrop-blur-[1px] rounded-md" />
                       )}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               )}

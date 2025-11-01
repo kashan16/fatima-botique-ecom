@@ -59,19 +59,6 @@ export function Navbar() {
     setAnchorEl(null);
   };
 
-  // Navigation items for consistent structure
-  const navItems = [
-    { href: "/shop", label: "Shop" },
-    { href: "/shop/dresses", label: "Dresses" },
-    { href: "/shop/new-arrivals", label: "New Arrivals" },
-  ];
-
-  const mobileMenuItems = [
-    ...navItems,
-    { href: "/account/orders", label: "Orders" },
-    { href: "/wishlist", label: "Wishlist" },
-  ];
-
   // Common hover styles for consistency
   const hoverStyles = "hover:bg-pink-50 hover:text-pink-600 transition-all duration-200";
   const mobileHoverStyles = "active:bg-pink-50 active:text-pink-600 transition-all duration-200";
@@ -97,22 +84,6 @@ export function Navbar() {
                 Fatima Boutique
               </Link>
             </motion.div>
-
-            {/* Navigation Links - Center */}
-            <div className="flex items-center space-x-6 text-sm font-medium text-gray-700">
-              {navItems.map((item) => (
-                <motion.div key={item.href} variants={navItemVariants}>
-                  <Link 
-                    href={item.href} 
-                    className="relative py-2 px-1 text-gray-600 hover:text-pink-600 transition-colors group"
-                  >
-                    {item.label}
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-pink-600 transition-all duration-300 group-hover:w-full"></span>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-
             {/* Right Side - Search & Actions */}
             <div className="flex items-center space-x-3">
               {/* Search Bar */}
@@ -332,30 +303,6 @@ export function Navbar() {
                         </div>
                       </div>
                     )}
-
-                    {/* Navigation Links with Enhanced Mobile Hover */}
-                    <nav className="flex-1 p-2">
-                      {mobileMenuItems.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className={`
-                            flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg 
-                            ${hoverStyles} ${mobileHoverStyles}
-                            mx-2 my-1
-                            transform transition-all duration-200
-                            active:scale-95 active:shadow-inner
-                            touch-manipulation
-                          `}
-                          style={{
-                            WebkitTapHighlightColor: 'transparent'
-                          }}
-                        >
-                          {item.label}
-                        </Link>
-                      ))}
-                    </nav>
 
                     {/* Auth Section with Enhanced Mobile Interactions */}
                     <div className="p-4 border-t border-gray-100 bg-gray-50/50">

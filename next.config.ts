@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     domains: ['img.clerk.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'krtsjvztmqkiyilfhkyu.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   }
 };
 

@@ -2,7 +2,6 @@
 'use client';
 
 import { useCart } from '@/hooks/useCart';
-import { useCategory } from '@/hooks/useCategory';
 import useProduct from '@/hooks/useProduct';
 import { useWishlist } from '@/hooks/useWishlist';
 import { Category, Product, ProductWithDetails } from '@/types';
@@ -14,11 +13,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+//import { Skeleton } from '@/components/ui/skeleton';
 import { Heart, Plus, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { CategoryCard } from './CategoryCard';
 
 // Optimized Product Card Component
 const ProductCard = ({ 
@@ -48,12 +46,15 @@ const ProductCard = ({
 
   if (!primaryVariant) return null;
 
-  const imageSrc = primaryImage?.object_path 
-    ? (primaryImage.object_path.startsWith('http') 
-        ? primaryImage.object_path 
-        : `/${primaryImage.object_path.replace(/^\/+/, '')}`)
-    : null;
+  const safeImageSrc = (path?: string | null): string => {
+    if (!path) return '/placeholder.png';
+    const trimmed = path.trim();
+    if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith('/')) return trimmed;
+    return `/${trimmed.replace(/^\/+/, '')}`;
+  };
 
+  const imageSrc = safeImageSrc(primaryImage?.object_path);
   const finalPrice = Number(product.base_price || 0) + Number(primaryVariant.price_adjustment || 0);
   const isCurrentlyWishlisted = isInWishlist(primaryVariant.id);
 
@@ -63,13 +64,17 @@ const ProductCard = ({
       className="overflow-hidden rounded-xl cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-gray-100 bg-white group"
     >
       <div className="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
-        {imageSrc ? (
+        {imageSrc && imageSrc !== '/placeholder.png' ? (
           <Image
             src={imageSrc}
             alt={primaryImage?.alt_text || product.name || 'product image'}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              e.currentTarget.src = '/placeholder.png';
+            }}
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-gray-400">
@@ -149,7 +154,6 @@ export const MainPage = () => {
     loading: productDataLoading,
   } = useProduct();
 
-  const { categories, fetchCategoryById, loading: categoriesLoading } = useCategory();
 
   // Updated wishlist hook usage
   const { 
@@ -166,38 +170,24 @@ export const MainPage = () => {
   } = useCart();
 
   const [newArrivals, setNewArrivals] = useState<ProductWithDetails[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<ProductWithDetails[]>([]);
   const [loadingInitialProducts, setLoadingInitialProducts] = useState(true);
 
   // Memoized product data fetching
   const buildProductDetails = useMemo(() => {
     return async (baseProducts: Product[]) => {
-      const slice = baseProducts.slice(0, 16);
+      const slice = baseProducts.slice(0, 8); // Only need 8 for new arrivals now
 
       const enriched = await Promise.allSettled(
         slice.map(async (p) => {
           try {
-            const [variants, images, categoryData] = await Promise.all([
+            const [variants, images] = await Promise.all([
               getVariantsForProduct(p.id).catch(() => []),
               getImagesForProduct(p.id).catch(() => []),
-              fetchCategoryById(p.category_id).catch(() => null),
             ]);
-
-            const category: Category = categoryData || {
-              id: p.category_id,
-              name: 'Unknown Category',
-              slug: 'unknown',
-              description: null,
-              created_at: new Date().toISOString(),
-              parent_category_id: null,
-              is_active: true
-            };
-
             return {
               ...p,
               variants: variants || [],
               images: images || [],
-              category,
             } as ProductWithDetails;
           } catch (err) {
             console.error('Error enriching product', p.id, err);
@@ -226,7 +216,7 @@ export const MainPage = () => {
         )
         .map(result => result.value);
     };
-  }, [getVariantsForProduct, getImagesForProduct, fetchCategoryById]);
+  }, [getVariantsForProduct, getImagesForProduct]);
 
   // Optimized initial data loading
   useEffect(() => {
@@ -245,8 +235,7 @@ export const MainPage = () => {
         
         if (!mounted) return;
 
-        setNewArrivals(enriched.slice(0, 8));
-        setFeaturedProducts(enriched.slice(8, 16));
+        setNewArrivals(enriched); // Just set new arrivals
       } catch (err) {
         console.error('Failed to load initial products for main page:', err);
         if (mounted) {
@@ -281,7 +270,7 @@ export const MainPage = () => {
     }
 
     try {
-      await addToCart(productVariantId,1);
+      await addToCart(productVariantId, 1);
       // Success toast is handled by the hook
     } catch (err) {
       // Error toast is handled by the hook
@@ -312,7 +301,7 @@ export const MainPage = () => {
   };
 
   // Derived loading state
-  const overallLoading = !isClerkLoaded || loadingInitialProducts || productDataLoading || categoriesLoading;
+  const overallLoading = !isClerkLoaded || loadingInitialProducts || productDataLoading;
 
   if (overallLoading) {
     return (
@@ -343,38 +332,32 @@ export const MainPage = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-4xl font-bold text-gray-900 mb-10 text-center font-serif">Shop by Category</h2>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {categories.length === 0 ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <Card key={i} className="rounded-xl border border-gray-100 shadow-sm bg-white min-h-[140px] flex items-center justify-center p-4">
-                  <Skeleton className="h-full w-full" />
-                </Card>
-              ))
-            ) : (
-              categories.slice(0, 10).map((category) => (
-                <CategoryCard key={category.id} {...category} />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* New Arrivals Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-4xl font-bold text-gray-900 mb-10 text-center font-serif">New Arrivals</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4 font-serif">New Arrivals</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Fresh styles just landed. Be the first to explore our latest collection.
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {loadingInitialProducts ? (
-              Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
+              Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
             ) : newArrivals.length === 0 ? (
-              <p className="col-span-full text-center text-gray-600 py-8">
-                No new arrivals found.
-              </p>
+              <div className="col-span-full text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <Plus className="w-16 h-16 mx-auto" />
+                </div>
+                <p className="text-gray-600 text-lg mb-4">No new arrivals found.</p>
+                <Button
+                  onClick={() => router.push('/products')}
+                  variant="outline"
+                >
+                  Browse All Products
+                </Button>
+              </div>
             ) : (
               newArrivals.map((product) => (
                 <ProductCard
@@ -390,35 +373,19 @@ export const MainPage = () => {
               ))
             )}
           </div>
-        </div>
-      </section>
 
-      {/* Featured Products Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-4xl font-bold text-gray-900 mb-10 text-center font-serif">Featured Selections</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {loadingInitialProducts ? (
-              Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
-            ) : featuredProducts.length === 0 ? (
-              <p className="col-span-full text-center text-gray-600 py-8">
-                No featured products found.
-              </p>
-            ) : (
-              featuredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onProductClick={handleProductClick}
-                  onAddToCart={handleAddToCart}
-                  onWishlistToggle={handleWishlistToggle}
-                  isInWishlist={isInWishlist}
-                  isWishlistLoading={wishlistLoading}
-                  isCartLoading={cartLoading}
-                />
-              ))
-            )}
-          </div>
+          {/* View More Button */}
+          {newArrivals.length > 0 && (
+            <div className="text-center mt-12">
+              <Button
+                onClick={() => router.push('/products')}
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 px-8 py-2"
+              >
+                View All Products
+              </Button>
+            </div>
+          )}
         </div>
       </section>
     </div>
