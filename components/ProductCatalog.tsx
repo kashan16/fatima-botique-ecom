@@ -130,16 +130,17 @@ const ProductCard = ({
                 
                 <div className="flex items-center justify-between">
                     <p className="text-xl font-bold text-gray-900">₹{finalPrice.toFixed(2)}</p>
-                    <Button
+                        <Button
                         onClick={(e) => onAddToCart(e, primaryVariant.id)}
                         size="sm"
                         disabled={isCartLoading || isOutOfStock}
                         className="bg-gray-900 hover:bg-gray-800 text-white rounded-lg px-4 py-2 transition-colors"
-                    >
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        Add
-                    </Button>
-                </div>
+                        >
+                            <div className='flex items-center justify-center'>
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                            </div>
+                        </Button>
+                    </div>
             </CardContent>
         </Card>
     );

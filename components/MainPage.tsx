@@ -175,7 +175,7 @@ export const MainPage = () => {
   // Memoized product data fetching
   const buildProductDetails = useMemo(() => {
     return async (baseProducts: Product[]) => {
-      const slice = baseProducts.slice(0, 8); // Only need 8 for new arrivals now
+      const slice = baseProducts.slice(0, 4); // Only need 8 for new arrivals now
 
       const enriched = await Promise.allSettled(
         slice.map(async (p) => {
