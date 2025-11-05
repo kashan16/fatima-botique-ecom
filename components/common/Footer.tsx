@@ -37,7 +37,7 @@ export function Footer() {
             <li><Link href="/contact" className="hover:text-pink-400 transition-colors">Contact Us</Link></li>
             <li className="flex items-center justify-center md:justify-start">
                 <MailIcon className="h-4 w-4 mr-2 text-pastel-pink" />
-                <span>hello@fatimabotique.com</span>
+                <span>boutique.fatima25@gmail.com</span>
             </li>
             <li className="flex items-center justify-center md:justify-start">
                 <PhoneIcon className="h-4 w-4 mr-2 text-pastel-pink" />
