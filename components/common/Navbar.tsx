@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { SearchModal } from "../modals/MobileSearchModal";
 import { SearchBar } from "../modals/SearchModal";
 import { Button } from "../ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
 
 // Material-UI Components
 import { Divider, ListItemIcon, ListItemText } from '@mui/material';
@@ -63,6 +63,28 @@ export function Navbar() {
   const hoverStyles = "hover:bg-pink-50 hover:text-pink-600 transition-all duration-200";
   const mobileHoverStyles = "active:bg-pink-50 active:text-pink-600 transition-all duration-200";
 
+  // Navigation items for mobile menu
+  const mobileNavItems = [
+    {
+      href: "/wishlist",
+      icon: Heart,
+      label: "Wishlist",
+      show: true
+    },
+    {
+      href: "/account/profile",
+      icon: User,
+      label: "Profile",
+      show: isSignedIn
+    },
+    {
+      href: "/account/orders",
+      icon: Settings,
+      label: "Orders",
+      show: isSignedIn
+    },
+  ];
+
   return (
     <>
       <motion.nav
@@ -96,6 +118,20 @@ export function Navbar() {
 
               {/* Action Buttons */}
               <div className="flex items-center space-x-1">
+                {/* Wishlist - Now consistent across both views */}
+                <motion.div variants={navItemVariants}>
+                  <Link href="/wishlist">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`w-9 h-9 rounded-lg ${hoverStyles}`}
+                      aria-label="Wishlist"
+                    >
+                      <Heart className="w-4 h-4"/>
+                    </Button>
+                  </Link>
+                </motion.div>
+
                 {/* User Menu with Material-UI */}
                 <motion.div variants={navItemVariants}>
                   {isSignedIn ? (
@@ -163,7 +199,7 @@ export function Navbar() {
                           </div>
                         </div>
 
-                        <MenuItem component={Link} href="/account/profile">
+                        <MenuItem component={Link} href="/account/profile" onClick={handleClose}>
                           <ListItemIcon>
                             <User className="w-4 h-4" />
                           </ListItemIcon>
@@ -210,20 +246,6 @@ export function Navbar() {
                   )}
                 </motion.div>
 
-                {/* Wishlist */}
-                <motion.div variants={navItemVariants}>
-                  <Link href="/wishlist">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`w-9 h-9 rounded-lg ${hoverStyles}`}
-                      aria-label="Wishlist"
-                    >
-                      <Heart className="w-4 h-4"/>
-                    </Button>
-                  </Link>
-                </motion.div>
-
                 {/* Cart */}
                 <motion.div variants={navItemVariants}>
                   <Link href="/cart">
@@ -263,6 +285,7 @@ export function Navbar() {
                   side="left" 
                   className="w-80 bg-white/95 backdrop-blur-md border-r border-gray-200 p-0"
                 >
+                  <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
                   <div className="flex flex-col h-full">
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -304,44 +327,54 @@ export function Navbar() {
                       </div>
                     )}
 
-                    {/* Auth Section with Enhanced Mobile Interactions */}
+                    {/* Navigation Items */}
+                    <div className="flex-1 p-4 space-y-2">
+                      {mobileNavItems.map((item) => 
+                        item.show && (
+                          <Link 
+                            key={item.href}
+                            href={item.href} 
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="block"
+                          >
+                            <Button
+                              variant="outline"
+                              className={`
+                                w-full justify-start 
+                                ${hoverStyles} ${mobileHoverStyles}
+                                border-gray-200
+                                transform transition-all duration-200
+                                active:scale-95
+                              `}
+                            >
+                              <item.icon className="mr-3 w-4 h-4" />
+                              {item.label}
+                            </Button>
+                          </Link>
+                        )
+                      )}
+                    </div>
+
+                    {/* Auth Section */}
                     <div className="p-4 border-t border-gray-100 bg-gray-50/50">
                       {isSignedIn ? (
-                        <div className="space-y-2">
-                          <Button
-                            onClick={() => {
-                              setIsMobileMenuOpen(false);
-                            }}
-                            variant="outline"
-                            className={`
-                              w-full justify-start 
-                              ${hoverStyles} ${mobileHoverStyles}
-                              border-gray-200
-                              transform transition-all duration-200
-                              active:scale-95
-                            `}
-                          >
-                            <User className="mr-3 w-4 h-4" />
-                            Profile
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              handleSignOut();
-                              setIsMobileMenuOpen(false);
-                            }}
-                            variant="outline"
-                            className={`
-                              w-full justify-start text-red-600 border-red-200 
-                              hover:bg-red-50 hover:text-red-700
-                              active:bg-red-100 active:text-red-800
-                              transform transition-all duration-200
-                              active:scale-95
-                            `}
-                          >
-                            <LogOut className="mr-3 w-4 h-4" />
-                            Sign Out
-                          </Button>
-                        </div>
+                        <Button
+                          onClick={() => {
+                            handleSignOut();
+                            setIsMobileMenuOpen(false);
+                          }}
+                          variant="outline"
+                          className={`
+                            w-full justify-start text-red-600 border-red-200 
+                            hover:bg-red-50 hover:text-red-700
+                            active:bg-red-100 active:text-red-800
+                            transform transition-all duration-200
+                            active:scale-95
+                          `}
+                        >
+                          <LogOut className="mr-3 w-4 h-4" />
+                          Sign Out
+                        </Button>
                       ) : (
                         <div className="space-y-2">
                           <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
@@ -389,6 +422,20 @@ export function Navbar() {
 
             {/* Mobile Right Actions */}
             <div className="flex items-center space-x-1">
+              {/* Wishlist - Now consistent with desktop */}
+              <motion.div variants={navItemVariants}>
+                <Link href="/wishlist">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`w-9 h-9 rounded-lg ${hoverStyles} ${mobileHoverStyles}`}
+                    aria-label="Wishlist"
+                  >
+                    <Heart className="w-4 h-4"/>
+                  </Button>
+                </Link>
+              </motion.div>
+
               {/* Search Button */}
               <motion.div variants={navItemVariants}>
                 <Button 
