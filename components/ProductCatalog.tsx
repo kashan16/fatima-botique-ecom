@@ -17,114 +17,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ChevronDown, ChevronUp, Filter, Heart, Plus, ShoppingCart, X } from 'lucide-react';
-import Image from 'next/image';
+import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProductCard } from './common/ProductCard';
 
-// Optimized Product Card Component
-const ProductCard = ({ 
-  product, 
-  onProductClick, 
-  onAddToCart, 
-  onWishlistToggle,
-  isInWishlist,
-  isWishlistLoading,
-  isCartLoading
-}: { 
-  product: ProductWithDetails;
-  onProductClick: (slug: string) => void;
-  onAddToCart: (e: React.MouseEvent, variantId: string) => void;
-  onWishlistToggle: (e: React.MouseEvent, variantId: string) => void;
-  isInWishlist: (variantId: string) => boolean;
-  isWishlistLoading: boolean;
-  isCartLoading: boolean;
-}) => {
-  const primaryVariant = product.variants?.[0];
-  const primaryImage = product.images?.find((img) => img.is_primary) || product.images?.[0];
-
-
-  if (!primaryVariant) return null;
-
-  const safeImageSrc = (path?: string | null): string => {
-    if (!path) return '/placeholder.png';
-    const trimmed = path.trim();
-    if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) return trimmed;
-    if (trimmed.startsWith('/')) return trimmed;
-    return `/${trimmed.replace(/^\/+/, '')}`;
-  };
-
-  const imageSrc = safeImageSrc(primaryImage?.object_path);
-  const finalPrice = Number(product.base_price || 0) + Number(primaryVariant.price_adjustment || 0);
-  const isCurrentlyWishlisted = isInWishlist(primaryVariant.id);
-
-  return (
-    <Card
-      onClick={() => onProductClick(product.slug)}
-      className="overflow-hidden rounded-xl cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-gray-100 bg-white group"
-    >
-      <div className="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
-        {imageSrc && imageSrc !== '/placeholder.png' ? (
-          <Image
-            src={imageSrc}
-            alt={primaryImage?.alt_text || product.name || 'product image'}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
-            onError={(e) => {
-              // Fallback to placeholder if image fails to load
-              e.currentTarget.src = '/placeholder.png';
-            }}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-400">
-            <div className="rounded-full bg-blue-500/10 p-3">
-              <Plus className="w-8 h-8 text-blue-500" />
-            </div>
-            <span className="text-sm">No image available</span>
-          </div>
-        )}
-
-        <div className="absolute top-3 right-3">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={(e) => onWishlistToggle(e, primaryVariant.id)}
-            className="bg-white/70 backdrop-blur-sm hover:bg-white/90 rounded-full w-8 h-8 p-0 flex items-center justify-center transition-all duration-200"
-            aria-label={isCurrentlyWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-            disabled={isWishlistLoading}
-          >
-            <Heart
-              className={`w-4 h-4 transition-all duration-200 ${
-                isCurrentlyWishlisted 
-                  ? 'fill-red-500 text-red-500 scale-110' 
-                  : 'text-gray-700 hover:text-red-500'
-              }`}
-            />
-          </Button>
-        </div>
-      </div>
-
-      <CardContent className="p-4 flex flex-col gap-2">
-        <h3 className="font-semibold text-gray-800 text-lg mb-1 line-clamp-2 font-sans tracking-tight">
-          {product.name}
-        </h3>
-
-        <div className="flex items-center justify-between mt-auto">
-          <p className="text-xl font-bold text-gray-900 font-sans tracking-tight">₹{finalPrice.toFixed(2)}</p>
-          <Button
-            onClick={(e) => onAddToCart(e, primaryVariant.id)}
-            size="sm"
-            disabled={isCartLoading}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm transition-all duration-200 hover:scale-105 disabled:opacity-50"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Add
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 // Skeleton Loader
 const ProductCardSkeleton = () => (
@@ -355,7 +251,7 @@ export const ProductCatalog = () => {
     
     return (
         <div className="min-h-screen bg-white">
-            <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl w-full">
                 {/* Header */}
                 <div className="mb-12 text-center">
                     <h1 className="text-4xl font-bold text-gray-900 mb-4 font-serif">Our Collection</h1>
@@ -459,35 +355,23 @@ export const ProductCatalog = () => {
                     )}
                 </div>
 
-                {/* Products Grid - Centered */}
-                <div className="flex justify-center">
+                {/* Products Grid */}
+                <div className="container mx-auto px-4 max-w-6xl">
                     {isLoading ? (
-                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                             {Array.from({ length: 8 }).map((_, i) => (
                                 <ProductCardSkeleton key={i} />
                             ))}
-                        </div>
-                    ) : products.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center max-w-md">
-                            <div className="rounded-full bg-gray-100 p-6 mb-6">
-                                <ShoppingCart className="h-12 w-12 text-gray-400" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">No products found</h3>
-                            <p className="text-gray-600 mb-8">
-                                Try adjusting your filters to find what you&apos;re looking for
-                            </p>
-                            <Button 
-                                onClick={handleClearFilters}
-                                variant="outline"
-                                className="border-gray-300"
-                            >
-                                Clear all filters
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl">
-                            {products.map((product) => (
-                                <ProductCard
+                            ) : products.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-4">No products found</h3>
+                                <Button onClick={handleClearFilters} variant="outline">Clear Filters</Button>
+                                </div>
+                            ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                                {products.map((product) => (
+                                    <ProductCard
                                     key={product.id}
                                     product={product}
                                     onProductClick={handleProductClick}
@@ -496,11 +380,11 @@ export const ProductCatalog = () => {
                                     isInWishlist={isInWishlist}
                                     isWishlistLoading={wishlistLoading}
                                     isCartLoading={cartLoading}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
             </div>
         </div>
     );
