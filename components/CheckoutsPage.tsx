@@ -1,14 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/Checkout.tsx
 'use client';
 
 import { useAddresses } from '@/hooks/useAddresses';
 import { useCart } from '@/hooks/useCart';
 import { useOrder } from '@/hooks/useOrder';
+import useProduct from '@/hooks/useProduct'; // Import useProduct hook
 import { Address, CartItemWithDetails, CreateAddressInput, PaymentMethodType } from '@/types';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 // ShadCN components & icons
@@ -39,6 +41,7 @@ export const CheckoutsPage: React.FC = () => {
   const { cart, cartItems, cartTotal, loading: cartLoading, updateQuantity, removeFromCart, clearCart } = useCart();
   const { addresses, createAddress, loading: addressesLoading, refresh: refreshAddresses } = useAddresses();
   const { createOrder, loading: orderLoading, error: orderError } = useOrder();
+  const { getImagesForProduct } = useProduct(); // Add useProduct hook
 
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -46,6 +49,8 @@ export const CheckoutsPage: React.FC = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
+  const [productImages, setProductImages] = useState<{ [key: string]: any[] }>({}); // Store images by product ID
+  const [imagesLoading, setImagesLoading] = useState<Set<string>>(new Set()); // Track loading images
 
   // Address form state
   const [addressForm, setAddressForm] = useState<CreateAddressInput>({
@@ -60,6 +65,48 @@ export const CheckoutsPage: React.FC = () => {
     landmark: '',
     is_default: false,
   });
+
+  // Fetch images for products in cart
+  const fetchProductImages = useCallback(async () => {
+    if (!cartItems || cartItems.length === 0) return;
+
+    const productIds = cartItems
+      .map(item => item.product_variant?.product_id)
+      .filter(Boolean) as string[];
+
+    const uniqueProductIds = [...new Set(productIds)];
+    
+    for (const productId of uniqueProductIds) {
+      // Skip if already loading or already fetched
+      if (imagesLoading.has(productId) || productImages[productId]) continue;
+
+      setImagesLoading(prev => new Set(prev).add(productId));
+      
+      try {
+        const images = await getImagesForProduct(productId);
+        if (images) {
+          setProductImages(prev => ({
+            ...prev,
+            [productId]: images
+          }));
+        }
+      } catch (error) {
+        console.error(`Failed to fetch images for product ${productId}:`, error);
+      } finally {
+        setImagesLoading(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+      }
+    }
+  }, [cartItems, getImagesForProduct, imagesLoading, productImages]);
+
+  useEffect(() => {
+    if (cartItems && cartItems.length > 0) {
+      fetchProductImages();
+    }
+  }, [cartItems, fetchProductImages]);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -244,15 +291,21 @@ export const CheckoutsPage: React.FC = () => {
   const cartItemsWithDetails = cartItems as CartItemWithDetails[];
 
   const OrderItem: React.FC<{ item: CartItemWithDetails }> = ({ item }) => {
-    const primaryImage = item.product_variant?.images?.[0];
+    const productId = item.product_variant?.product_id;
+    const images = productId ? productImages[productId] : [];
+    const primaryImage = images?.find(img => img.is_primary) || images?.[0];
+    
     const safeImageSrc = (path?: string | null) => {
       if (!path) return '/placeholder.png';
-      const trimmed = (path || '').trim();
+      const trimmed = path.trim();
       if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) return trimmed;
       if (trimmed.startsWith('/')) return trimmed;
       return `/${trimmed.replace(/^\/+/, '')}`;
     };
 
+    const imageSrc = safeImageSrc(primaryImage?.object_path);
+    const isImageLoading = productId ? imagesLoading.has(productId) : false;
+    
     const isUpdating = updatingItems.has(item.id);
     const basePrice = item.product_variant?.product?.base_price || 0;
     const priceAdjustment = item.product_variant?.price_adjustment || 0;
@@ -261,13 +314,21 @@ export const CheckoutsPage: React.FC = () => {
     return (
       <div className="flex gap-4 py-3 items-center">
         <div className="relative w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
-          {primaryImage ? (
+          {isImageLoading ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            </div>
+          ) : imageSrc && imageSrc !== '/placeholder.png' ? (
             <Image 
-              src={safeImageSrc(primaryImage.object_path)} 
+              src={imageSrc}
               alt={item.product_variant?.product?.name || 'Product image'} 
               fill 
               className="object-cover" 
-              sizes="80px" 
+              sizes="80px"
+              onError={(e) => {
+                // Fallback to placeholder if image fails to load
+                e.currentTarget.src = '/placeholder.png';
+              }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-1">
