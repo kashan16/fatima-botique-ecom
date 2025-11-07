@@ -1,11 +1,13 @@
-```markdown
-# Fatima Boutique (E-Com platform)
+# Fatima Boutique
 
-A modern, full-featured e-commerce application built with Next.js, featuring a complete shopping experience from product discovery to order management.
+> A modern, full-featured e-commerce platform built with Next.js, featuring a complete shopping experience from product discovery to order management.
 
-## Features
+---
+
+## 🌟 Features
 
 ### Core Shopping Experience
+
 - **Product Catalog** - Browse products with advanced filtering and search
 - **Shopping Cart** - Full cart management with save for later functionality
 - **Wishlist** - Save products for future purchases
@@ -13,28 +15,36 @@ A modern, full-featured e-commerce application built with Next.js, featuring a c
 - **Responsive Design** - Optimized for all devices
 
 ### Order Management
+
 - **Checkout Process** - Complete checkout with address management
 - **Order History** - View and manage past orders
 - **Order Tracking** - Track order status and delivery
 - **Returns & Cancellations** - Process returns and cancellations
 
 ### Payments & Security
+
 - **Multiple Payment Methods** - Razorpay integration and Cash on Delivery
 - **Secure Authentication** - Clerk-based user management
 - **Address Management** - Multiple shipping addresses with defaults
 
-## Tech Stack
+---
 
-- **Frontend**: Next.js 14, React, TypeScript
-- **Authentication**: Clerk
-- **Database**: Supabase (PostgreSQL)
-- **Payments**: Razorpay
-- **UI Components**: ShadCN/UI, Tailwind CSS
-- **Animation**: Framer Motion
-- **Icons**: Lucide React
-- **State Management**: React Query (TanStack Query)
+## 🛠️ Tech Stack
 
-## Installation
+| Category | Technologies |
+|----------|-------------|
+| **Frontend** | Next.js 14, React, TypeScript |
+| **Authentication** | Clerk |
+| **Database** | Supabase (PostgreSQL) |
+| **Payments** | Razorpay |
+| **UI Components** | ShadCN/UI, Tailwind CSS |
+| **Animation** | Framer Motion |
+| **Icons** | Lucide React |
+| **State Management** | React Query (TanStack Query) |
+
+---
+
+## 🚀 Installation
 
 ```bash
 # Clone the repository
@@ -52,7 +62,9 @@ pnpm install
 cp .env.example .env.local
 ```
 
-## Configuration
+---
+
+## ⚙️ Configuration
 
 ### Environment Variables
 
@@ -92,21 +104,28 @@ The application expects the following Supabase tables:
 - `order_payments` - Payment records
 - `order_status_history` - Order status tracking
 
-## Available Hooks
+---
+
+## 🪝 Available Hooks
 
 ### Authentication & User
 
 #### `useAuth()`
+
 Enhanced authentication hook with user profile synchronization.
 
 ```typescript
 const { user, profile, isSignedIn, isLoaded, updateProfile } = useAuth();
 
 // Update user profile
-await updateProfile({ username: 'john_doe', phone_number: '+1234567890' });
+await updateProfile({ 
+  username: 'john_doe', 
+  phone_number: '+1234567890' 
+});
 ```
 
 #### `useProfile()`
+
 Complete user profile management.
 
 ```typescript
@@ -120,15 +139,19 @@ await updateProfile({
 ```
 
 #### `useUserAssets()`
+
 Initialize and manage user-specific assets (cart, wishlist).
 
 ```typescript
 const { assets, cartId, wishlistId, initializeAssets } = useUserAssets();
 ```
 
+---
+
 ### Products & Catalog
 
 #### `useProduct()`
+
 Comprehensive product management with variants and images.
 
 ```typescript
@@ -148,6 +171,7 @@ const results = await searchProducts('search query');
 ```
 
 #### `useCategory()`
+
 Category management with tree structure support.
 
 ```typescript
@@ -165,6 +189,7 @@ const category = await fetchCategoryBySlug('electronics');
 ```
 
 #### `useSearch()`
+
 Advanced product search with filtering and pagination.
 
 ```typescript
@@ -177,15 +202,19 @@ const { data, isLoading } = useSearch('laptop', {
 ```
 
 #### `useSearchSuggestions()`
+
 Real-time search suggestions.
 
 ```typescript
 const { data: suggestions } = useSearchSuggestions('lap');
 ```
 
+---
+
 ### Cart & Wishlist
 
 #### `useCart()`
+
 Complete shopping cart functionality.
 
 ```typescript
@@ -207,6 +236,7 @@ await updateQuantity('cart-item-id', 3);
 ```
 
 #### `useSaveForLater()`
+
 Manage saved for later items.
 
 ```typescript
@@ -218,6 +248,7 @@ const {
 ```
 
 #### `useWishlist()`
+
 Wishlist management.
 
 ```typescript
@@ -232,9 +263,12 @@ const {
 const isWishlisted = isInWishlist('variant-id');
 ```
 
+---
+
 ### Orders & Checkout
 
 #### `useCheckout()`
+
 Complete checkout process with validation.
 
 ```typescript
@@ -254,6 +288,7 @@ const result = await processCheckout({
 ```
 
 #### `useOrder()`
+
 Order management with cancellation and returns.
 
 ```typescript
@@ -270,6 +305,7 @@ const tracking = await trackOrder('order-id');
 ```
 
 #### `useOrderHistory()`
+
 Paginated order history with filtering.
 
 ```typescript
@@ -284,9 +320,12 @@ const {
 await loadMore();
 ```
 
+---
+
 ### Address Management
 
 #### `useAddresses()`
+
 Complete address CRUD operations.
 
 ```typescript
@@ -313,9 +352,12 @@ await createAddress({
 await setDefaultAddress('address-id');
 ```
 
+---
+
 ### Payments
 
 #### `usePayment()`
+
 Razorpay payment integration with COD support.
 
 ```typescript
@@ -332,20 +374,26 @@ await initializeRazorpayPayment('order-id', 2500, 'INR');
 await handleCODOrder('order-id');
 ```
 
+---
+
 ### Utilities
 
 #### `useDebounce()`
+
 Debounce values for search and filtering.
 
 ```typescript
 const debouncedSearch = useDebounce(searchTerm, 300);
 ```
 
-## Available Components
+---
+
+## 🧩 Available Components
 
 ### Page Components
 
 #### `MainPage`
+
 The application homepage featuring new arrivals and featured products.
 
 **Features:**
@@ -358,7 +406,10 @@ The application homepage featuring new arrivals and featured products.
 <MainPage />
 ```
 
+---
+
 #### `ProductCatalog`
+
 Complete product browsing experience with filtering and sorting.
 
 **Features:**
@@ -372,7 +423,10 @@ Complete product browsing experience with filtering and sorting.
 <ProductCatalog />
 ```
 
+---
+
 #### `ProductsPage`
+
 Individual product detail page with variant selection.
 
 **Features:**
@@ -387,7 +441,10 @@ Individual product detail page with variant selection.
 <ProductsPage />
 ```
 
+---
+
 #### `CartsPage`
+
 Shopping cart management page.
 
 **Features:**
@@ -402,7 +459,10 @@ Shopping cart management page.
 <CartsPage />
 ```
 
+---
+
 #### `CheckoutsPage`
+
 Complete checkout process.
 
 **Features:**
@@ -417,7 +477,10 @@ Complete checkout process.
 <CheckoutsPage />
 ```
 
+---
+
 #### `OrdersPage`
+
 Order history and management.
 
 **Features:**
@@ -431,7 +494,10 @@ Order history and management.
 <OrdersPage />
 ```
 
+---
+
 #### `ProfilesPage`
+
 User profile and address management.
 
 **Features:**
@@ -445,9 +511,12 @@ User profile and address management.
 <ProfilesPage />
 ```
 
+---
+
 ### Shared Components
 
 #### `Navbar`
+
 Main navigation with user menu and search.
 
 **Features:**
@@ -461,7 +530,10 @@ Main navigation with user menu and search.
 <Navbar />
 ```
 
+---
+
 #### `Footer`
+
 Site footer with links and newsletter signup.
 
 **Features:**
@@ -475,7 +547,10 @@ Site footer with links and newsletter signup.
 <Footer />
 ```
 
+---
+
 #### `AnimatedBackground`
+
 Animated background with gradient orbs and particles.
 
 **Features:**
@@ -489,7 +564,10 @@ Animated background with gradient orbs and particles.
 <AnimatedBackground />
 ```
 
+---
+
 #### `CategoryCard`
+
 Category display card for browsing.
 
 **Features:**
@@ -502,7 +580,10 @@ Category display card for browsing.
 <CategoryCard name="Electronics" slug="electronics" />
 ```
 
+---
+
 #### `ProductCard`
+
 Product display card with actions.
 
 **Features:**
@@ -522,7 +603,10 @@ Product display card with actions.
 />
 ```
 
+---
+
 #### `PageSection`
+
 Reusable page section container.
 
 **Features:**
@@ -537,7 +621,9 @@ Reusable page section container.
 </PageSection>
 ```
 
-## Component Architecture
+---
+
+## 🏗️ Component Architecture
 
 ### Props Interface
 
@@ -567,6 +653,7 @@ interface ComponentProps {
 ### State Management
 
 Components use a combination of:
+
 - **Local State** - UI state (loading, form data)
 - **Custom Hooks** - Business logic (cart, user, products)
 - **URL State** - Filtering and routing
@@ -584,15 +671,19 @@ try {
 }
 ```
 
-## Styling & Theming
+---
+
+## 🎨 Styling & Theming
 
 ### Design System
+
 - **Colors**: Gray scale with pink accents
 - **Typography**: Inter font family
 - **Spacing**: Consistent 8px grid system
 - **Shadows**: Subtle shadows for depth
 
 ### Glass Morphism Effect
+
 Many components use glass morphism design:
 
 ```css
@@ -602,13 +693,17 @@ border: 1px solid rgba(255, 255, 255, 0.2);
 ```
 
 ### Responsive Design
+
 - **Mobile First**: Components designed for mobile first
 - **Breakpoints**: Tailwind CSS breakpoints
 - **Flexible Grids**: CSS Grid and Flexbox layouts
 
-## Data Flow
+---
+
+## 🔄 Data Flow
 
 ### Component Hierarchy
+
 ```
 App
 ├── Navbar
@@ -617,11 +712,13 @@ App
 ```
 
 ### State Propagation
+
 - **User State**: Clerk authentication → Custom hooks → Components
 - **Cart State**: useCart hook → Cart components
 - **Product State**: useProduct hook → Product components
 
 ### Hook Data Flow
+
 1. **Authentication** → User signs in via Clerk
 2. **Profile Sync** → User profile created/updated in Supabase
 3. **Asset Initialization** → Cart and wishlist initialized
@@ -629,7 +726,9 @@ App
 5. **User Interactions** → Hooks update state and database
 6. **UI Updates** → Components re-render with new data
 
-## Hook Return Types
+---
+
+## 📦 Hook Return Types
 
 Each hook returns a consistent interface:
 
@@ -656,7 +755,9 @@ interface HookReturn {
 }
 ```
 
-## Usage Examples
+---
+
+## 💡 Usage Examples
 
 ### Product Listing with Search
 
@@ -726,76 +827,94 @@ function CheckoutFlow() {
 }
 ```
 
-## Performance Optimizations
+---
+
+## ⚡ Performance Optimizations
 
 ### Image Optimization
+
 - Next.js Image component with lazy loading
 - Optimized image sizes and formats
 - Blur placeholders for better UX
 
 ### Code Splitting
+
 - Dynamic imports for heavy components
 - Route-based code splitting
 - Lazy loading for below-fold content
 
 ### State Optimization
+
 - Memoized callbacks with useCallback
 - Optimized re-renders with React.memo
 - Efficient state updates
 
 ### Hook Optimizations
+
 - **Debounced search** to reduce API calls
 - **Memoized callbacks** to prevent unnecessary re-renders
 - **Optimistic updates** for immediate UI feedback
 - **Pagination support** for large datasets
 - **Query caching** with React Query
 
-## Security Features
+---
+
+## 🔒 Security Features
 
 ### Authentication
+
 - Clerk-based authentication
 - Protected routes
 - Session management
 
 ### Data Validation
+
 - Form validation on client and server
 - Input sanitization
 - TypeScript type checking
 
 ### Payment Security
+
 - Secure payment processing
 - PCI compliance with Razorpay
 - Secure API endpoints
 
 ### Hook Security
+
 - **Row Level Security (RLS)** - All Supabase queries are user-scoped
 - **Authentication Guards** - Hooks validate user authentication
 - **Input Validation** - Comprehensive payload validation
 - **Error Boundaries** - Graceful error handling
 
-## Troubleshooting
+---
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Authentication Problems**
-   - Check Clerk configuration
-   - Verify environment variables
-   - Clear browser storage
+#### 1. Authentication Problems
 
-2. **Cart State Issues**
-   - Check user authentication state
-   - Verify Supabase connection
-   - Clear local storage
+- Check Clerk configuration
+- Verify environment variables
+- Clear browser storage
 
-3. **Payment Failures**
-   - Verify Razorpay keys
-   - Check network connectivity
-   - Validate order amounts
+#### 2. Cart State Issues
 
-4. **Database Errors**
-   - Verify table structures match expectations
-   - Check Supabase connection
-   - Validate RLS policies
+- Check user authentication state
+- Verify Supabase connection
+- Clear local storage
+
+#### 3. Payment Failures
+
+- Verify Razorpay keys
+- Check network connectivity
+- Validate order amounts
+
+#### 4. Database Errors
+
+- Verify table structures match expectations
+- Check Supabase connection
+- Validate RLS policies
 
 ### Debug Mode
 
@@ -805,7 +924,11 @@ Enable debug logging in development:
 localStorage.setItem('debug', 'ecommerce:*');
 ```
 
-## Contributing
+---
+
+## 🤝 Contributing
+
+### Getting Started
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/new-component`
@@ -815,41 +938,36 @@ localStorage.setItem('debug', 'ecommerce:*');
 
 ### Component Development Guidelines
 
-1. **Follow the design system**
-2. **Use TypeScript for type safety**
-3. **Implement responsive design**
-4. **Add proper error handling**
-5. **Include loading states**
-6. **Write comprehensive documentation**
+1. Follow the design system
+2. Use TypeScript for type safety
+3. Implement responsive design
+4. Add proper error handling
+5. Include loading states
+6. Write comprehensive documentation
 
 ### Hook Development Guidelines
 
-1. **Follow consistent return type patterns**
-2. **Implement comprehensive error handling**
-3. **Include loading states**
-4. **Optimize performance with memoization**
-5. **Validate user authentication**
-6. **Provide refresh capabilities**
+1. Follow consistent return type patterns
+2. Implement comprehensive error handling
+3. Include loading states
+4. Optimize performance with memoization
+5. Validate user authentication
+6. Provide refresh capabilities
 
-## License
+---
+
+## 📄 License
 
 MIT License - see LICENSE file for details.
 
-## Next Steps
+---
 
-The application provides a solid foundation for an e-commerce platform. Future enhancements could include:
+## 📞 Support
 
-- [ ] Advanced search with AI recommendations
-- [ ] Multi-vendor support
-- [ ] Inventory management
-- [ ] Advanced analytics dashboard
-- [ ] Mobile app with React Native
-- [ ] Internationalization (i18n)
-- [ ] Advanced payment methods
-- [ ] Social media integration
-- [ ] Customer reviews and ratings
-- [ ] Abandoned cart recovery
-- [ ] Advanced hook optimizations
-- [ ] Real-time inventory updates
-- [ ] Bulk operations for admin features
-```
+For issues, questions, or contributions, please open an issue on GitHub or contact the maintainers.
+
+---
+
+<div align="center">
+  <p>Made By Mohd. Kashan Yunus</p>
+</div>
