@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/Checkout.tsx
 'use client';
 
 import { useAddresses } from '@/hooks/useAddresses';
 import { useCart } from '@/hooks/useCart';
 import { useOrder } from '@/hooks/useOrder';
-import useProduct from '@/hooks/useProduct'; // Import useProduct hook
+import useProduct from '@/hooks/useProduct';
 import { Address, CartItemWithDetails, CreateAddressInput, PaymentMethodType } from '@/types';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
@@ -41,7 +40,7 @@ export const CheckoutsPage: React.FC = () => {
   const { cart, cartItems, cartTotal, loading: cartLoading, updateQuantity, removeFromCart, clearCart } = useCart();
   const { addresses, createAddress, loading: addressesLoading, refresh: refreshAddresses } = useAddresses();
   const { createOrder, loading: orderLoading, error: orderError } = useOrder();
-  const { getImagesForProduct } = useProduct(); // Add useProduct hook
+  const { getImagesForProduct } = useProduct();
 
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -49,8 +48,8 @@ export const CheckoutsPage: React.FC = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
-  const [productImages, setProductImages] = useState<{ [key: string]: any[] }>({}); // Store images by product ID
-  const [imagesLoading, setImagesLoading] = useState<Set<string>>(new Set()); // Track loading images
+  const [productImages, setProductImages] = useState<{ [key: string]: any[] }>({});
+  const [imagesLoading, setImagesLoading] = useState<Set<string>>(new Set());
 
   // Address form state
   const [addressForm, setAddressForm] = useState<CreateAddressInput>({
@@ -77,7 +76,6 @@ export const CheckoutsPage: React.FC = () => {
     const uniqueProductIds = [...new Set(productIds)];
     
     for (const productId of uniqueProductIds) {
-      // Skip if already loading or already fetched
       if (imagesLoading.has(productId) || productImages[productId]) continue;
 
       setImagesLoading(prev => new Set(prev).add(productId));
@@ -145,7 +143,7 @@ export const CheckoutsPage: React.FC = () => {
 
   if (cartLoading || addressesLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center relative">
         <Loader2 className="h-12 w-12 animate-spin text-gray-900" />
       </div>
     );
@@ -153,11 +151,11 @@ export const CheckoutsPage: React.FC = () => {
 
   if (!cart || cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="p-8 text-center shadow-lg bg-white rounded-lg">
-          <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        <Card className="p-8 text-center shadow-lg bg-white/80 backdrop-blur-sm rounded-lg border border-white/20">
+          <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
           <h2 className="text-2xl font-semibold text-gray-800 mb-4 font-sans">Your Cart is Empty</h2>
-          <p className="text-gray-600 mb-6">Looks like you haven&apos;t added anything to your cart yet.</p>
+          <p className="text-gray-700 mb-6">Looks like you haven&apos;t added anything to your cart yet.</p>
           <Button onClick={() => router.push('/')} className="bg-gray-800 text-white hover:bg-gray-700 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Start Shopping
@@ -313,10 +311,10 @@ export const CheckoutsPage: React.FC = () => {
 
     return (
       <div className="flex gap-4 py-3 items-center">
-        <div className="relative w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
+        <div className="relative w-20 h-20 bg-gray-100/50 rounded-md overflow-hidden flex-shrink-0 border border-gray-200/50">
           {isImageLoading ? (
             <div className="w-full h-full flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
             </div>
           ) : imageSrc && imageSrc !== '/placeholder.png' ? (
             <Image 
@@ -326,12 +324,11 @@ export const CheckoutsPage: React.FC = () => {
               className="object-cover" 
               sizes="80px"
               onError={(e) => {
-                // Fallback to placeholder if image fails to load
                 e.currentTarget.src = '/placeholder.png';
               }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-1">
+            <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs text-center p-1">
               No Image
             </div>
           )}
@@ -340,8 +337,8 @@ export const CheckoutsPage: React.FC = () => {
           <p className="font-semibold text-gray-800 text-base font-sans line-clamp-1">
             {item.product_variant?.product?.name || 'Unknown Product'}
           </p>
-          <p className="text-gray-500 text-sm">{item.product_variant?.size} | {item.product_variant?.color}</p>
-          <p className="text-gray-500 text-sm">Qty: {item.quantity}</p>
+          <p className="text-gray-700 text-sm">{item.product_variant?.size} | {item.product_variant?.color}</p>
+          <p className="text-gray-700 text-sm">Qty: {item.quantity}</p>
         </div>
         <div className="grid items-center gap-2">
           <div className="flex items-center gap-2">
@@ -353,7 +350,7 @@ export const CheckoutsPage: React.FC = () => {
               size="icon" 
               onClick={() => handleRemoveItem(item.id)} 
               disabled={isUpdating} 
-              className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100 transition-colors"
+              className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100/50 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -364,6 +361,7 @@ export const CheckoutsPage: React.FC = () => {
               size="icon" 
               onClick={() => handleQuantityChange(item.id, item.quantity - 1)} 
               disabled={isUpdating || item.quantity <= 1}
+              className="bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white"
             >
               <Minus className="w-3 h-3" />
             </Button>
@@ -375,6 +373,7 @@ export const CheckoutsPage: React.FC = () => {
               size="icon" 
               onClick={() => handleQuantityChange(item.id, item.quantity + 1)} 
               disabled={isUpdating}
+              className="bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white"
             >
               <Plus className="w-3 h-3" />
             </Button>
@@ -385,10 +384,10 @@ export const CheckoutsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="min-h-screen py-12 relative">
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" onClick={() => router.back()} className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+          <Button variant="ghost" onClick={() => router.back()} className="text-gray-600 hover:text-gray-900 hover:bg-gray-100/50 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Button>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight font-sans">Checkout</h1>
@@ -397,8 +396,8 @@ export const CheckoutsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             {/* Address Card */}
-            <Card className="bg-white border border-gray-200 shadow-sm rounded-lg">
-              <CardHeader className="border-b border-gray-200 p-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg">
+              <CardHeader className="border-b border-gray-200/50 p-6">
                 <CardTitle className="flex items-center gap-3 text-2xl font-semibold text-gray-900 font-sans">
                   <MapPin className="w-6 h-6 text-sky-600" /> Shipping Address
                 </CardTitle>
@@ -411,15 +410,15 @@ export const CheckoutsPage: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {addresses.length === 0 && !showAddressForm && (
-                      <p className="text-gray-600 text-center py-4">No addresses found. Please add a new one.</p>
+                      <p className="text-gray-700 text-center py-4">No addresses found. Please add a new one.</p>
                     )}
                     {addresses.map(a => (
                       <div 
                         key={a.id} 
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
                           selectedAddress?.id === a.id 
-                            ? 'border-gray-900 bg-gray-50 shadow-sm' 
-                            : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                            ? 'border-gray-900 bg-gray-50/80 backdrop-blur-sm shadow-sm' 
+                            : 'border-gray-200/50 hover:border-gray-400 hover:bg-gray-50/50'
                         }`} 
                         onClick={() => { setSelectedAddress(a); setShowAddressForm(false); }}
                       >
@@ -433,12 +432,12 @@ export const CheckoutsPage: React.FC = () => {
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-gray-600 text-sm">{a.phone_number}</p>
-                            <p className="text-gray-600 text-sm">
+                            <p className="text-gray-700 text-sm">{a.phone_number}</p>
+                            <p className="text-gray-700 text-sm">
                               {a.address_line1}{a.address_line2 && `, ${a.address_line2}`}
                             </p>
-                            <p className="text-gray-600 text-sm">{a.city}, {a.state} - {a.pincode}</p>
-                            {a.landmark && <p className="text-gray-600 text-sm">Landmark: {a.landmark}</p>}
+                            <p className="text-gray-700 text-sm">{a.city}, {a.state} - {a.pincode}</p>
+                            {a.landmark && <p className="text-gray-700 text-sm">Landmark: {a.landmark}</p>}
                           </div>
                           {selectedAddress?.id === a.id && <Check className="w-5 h-5 text-sky-600" />}
                         </div>
@@ -447,7 +446,7 @@ export const CheckoutsPage: React.FC = () => {
                     <Button 
                       onClick={() => setShowAddressForm(prev => !prev)} 
                       variant="outline" 
-                      className="w-full border-2 border-dashed border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-colors py-6 text-base"
+                      className="w-full border-2 border-dashed border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50/50 transition-colors py-6 text-base"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {showAddressForm ? 'Hide Form' : 'Add New Address'}
@@ -458,8 +457,8 @@ export const CheckoutsPage: React.FC = () => {
             </Card>
 
             {showAddressForm && (
-              <Card className="bg-white border border-gray-200 shadow-sm rounded-lg">
-                <CardHeader className="border-b border-gray-200 p-6">
+              <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg">
+                <CardHeader className="border-b border-gray-200/50 p-6">
                   <CardTitle className="text-xl font-semibold text-gray-900 font-sans">Add New Address</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -474,7 +473,7 @@ export const CheckoutsPage: React.FC = () => {
                           required 
                           value={addressForm.full_name} 
                           onChange={(e) => setAddressForm({...addressForm, full_name: e.target.value})} 
-                          className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900" 
+                          className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900" 
                         />
                       </div>
                       <div className="space-y-2">
@@ -487,7 +486,7 @@ export const CheckoutsPage: React.FC = () => {
                           required 
                           value={addressForm.phone_number} 
                           onChange={(e) => setAddressForm({...addressForm, phone_number: e.target.value})} 
-                          className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900" 
+                          className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900" 
                         />
                       </div>
                     </div>
@@ -501,7 +500,7 @@ export const CheckoutsPage: React.FC = () => {
                         required 
                         value={addressForm.address_line1} 
                         onChange={(e) => setAddressForm({...addressForm, address_line1: e.target.value})} 
-                        className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900" 
+                        className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900" 
                       />
                     </div>
 
@@ -513,7 +512,7 @@ export const CheckoutsPage: React.FC = () => {
                         id="address_line2" 
                         value={addressForm.address_line2} 
                         onChange={(e) => setAddressForm({...addressForm, address_line2: e.target.value})} 
-                        className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900" 
+                        className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900" 
                       />
                     </div>
 
@@ -527,7 +526,7 @@ export const CheckoutsPage: React.FC = () => {
                           required 
                           value={addressForm.city} 
                           onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} 
-                          className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900" 
+                          className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900" 
                         />
                       </div>
                       <div className="space-y-2">
@@ -539,7 +538,7 @@ export const CheckoutsPage: React.FC = () => {
                           required 
                           value={addressForm.state} 
                           onChange={(e) => setAddressForm({...addressForm, state: e.target.value})} 
-                          className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900" 
+                          className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900" 
                         />
                       </div>
                       <div className="space-y-2">
@@ -551,7 +550,7 @@ export const CheckoutsPage: React.FC = () => {
                           required 
                           value={addressForm.pincode} 
                           onChange={(e) => setAddressForm({...addressForm, pincode: e.target.value})} 
-                          className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900" 
+                          className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900" 
                         />
                       </div>
                     </div>
@@ -581,7 +580,7 @@ export const CheckoutsPage: React.FC = () => {
                         type="button" 
                         variant="outline" 
                         onClick={() => setShowAddressForm(false)} 
-                        className="bg-white border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-900 flex-1"
+                        className="bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-900 flex-1"
                       >
                         Cancel
                       </Button>
@@ -592,8 +591,8 @@ export const CheckoutsPage: React.FC = () => {
             )}
 
             {/* Payment Method */}
-            <Card className="bg-white border border-gray-200 shadow-sm rounded-lg">
-              <CardHeader className="border-b border-gray-200 p-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg">
+              <CardHeader className="border-b border-gray-200/50 p-6">
                 <CardTitle className="flex items-center gap-3 text-2xl font-semibold text-gray-900 font-sans">
                   <CreditCard className="w-6 h-6 text-sky-600" /> Payment Method
                 </CardTitle>
@@ -606,8 +605,8 @@ export const CheckoutsPage: React.FC = () => {
                   <div className="space-y-4">
                     <div className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                       paymentMethod === 'cod' 
-                        ? 'border-gray-900 bg-gray-50 shadow-sm' 
-                        : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                        ? 'border-gray-900 bg-gray-50/80 backdrop-blur-sm shadow-sm' 
+                        : 'border-gray-200/50 hover:border-gray-400 hover:bg-gray-50/50'
                     } ${!isCodAvailable ? 'opacity-60 cursor-not-allowed' : ''}`}>
                       <RadioGroupItem 
                         value="cod" 
@@ -618,7 +617,7 @@ export const CheckoutsPage: React.FC = () => {
                       <Label htmlFor="cod" className="flex-1 cursor-pointer flex items-center justify-between">
                         <div>
                           <p className="font-semibold text-gray-800 font-sans">Cash on Delivery</p>
-                          <p className="text-sm text-gray-600">Pay when you receive your order</p>
+                          <p className="text-sm text-gray-700">Pay when you receive your order</p>
                         </div>
                         <CreditCard className="w-6 h-6 text-gray-600" />
                       </Label>
@@ -634,8 +633,8 @@ export const CheckoutsPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border border-gray-200 shadow-sm rounded-lg">
-              <CardHeader className="border-b border-gray-200 p-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg">
+              <CardHeader className="border-b border-gray-200/50 p-6">
                 <CardTitle className="text-xl font-semibold text-gray-900 font-sans">
                   Order Notes (Optional)
                 </CardTitle>
@@ -645,15 +644,15 @@ export const CheckoutsPage: React.FC = () => {
                   placeholder="Any special instructions..." 
                   value={orderNotes} 
                   onChange={(e) => setOrderNotes(e.target.value)} 
-                  className="bg-gray-50 border-gray-300 focus-visible:ring-gray-900 min-h-[120px] resize-y" 
+                  className="bg-white/50 backdrop-blur-sm border-gray-300 focus-visible:ring-gray-900 min-h-[120px] resize-y" 
                 />
               </CardContent>
             </Card>
           </div>
 
           <div className="lg:col-span-1">
-            <Card className="bg-white border border-gray-200 shadow-sm rounded-lg sticky top-8">
-              <CardHeader className="border-b border-gray-200 p-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg sticky top-8">
+              <CardHeader className="border-b border-gray-200/50 p-6">
                 <CardTitle className="text-2xl font-semibold text-gray-900 font-sans">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -662,7 +661,7 @@ export const CheckoutsPage: React.FC = () => {
                     <OrderItem key={item.id} item={item} />
                   ))}
                 </div>
-                <Separator className="my-6 bg-gray-200" />
+                <Separator className="my-6 bg-gray-200/50" />
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-gray-700 text-base">
                     <span className="font-sans">Subtotal</span>
@@ -678,7 +677,7 @@ export const CheckoutsPage: React.FC = () => {
                     <span className="font-sans">Tax (18%)</span>
                     <span className="font-semibold font-sans">₹{taxAmount.toFixed(2)}</span>
                   </div>
-                  <Separator className="my-3 bg-gray-200" />
+                  <Separator className="my-3 bg-gray-200/50" />
                   <div className="flex justify-between text-xl font-bold text-gray-900">
                     <span className="font-sans">Total</span>
                     <span className="font-sans">₹{totalAmount.toFixed(2)}</span>
@@ -709,7 +708,7 @@ export const CheckoutsPage: React.FC = () => {
 
                 <Link 
                   href="/cart" 
-                  className="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-6 rounded-md font-semibold font-sans mt-3 transition-colors"
+                  className="block w-full text-center bg-gray-100/80 backdrop-blur-sm hover:bg-gray-200/80 text-gray-800 py-3 px-6 rounded-md font-semibold font-sans mt-3 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2 inline" /> Back to Cart
                 </Link>

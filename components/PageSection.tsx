@@ -10,13 +10,13 @@ export default function PageSection({
     children?: React.ReactNode;
 }) {
     return (
-        <section className="min-h-[60vh] py-20 bg-white text-gray-800">
+        <section className="min-h-[60vh] py-20 bg-white/80 backdrop-blur-sm text-gray-800">
             <div className="container mx-auto px-4 max-w-4xl">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 font-serif text-gray-900">
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 font-serif text-gray-800">
                     {title}
                 </h1>
                 {subtitle && (
-                    <p className="text-gray-600 mb-8 leading-relaxed text-lg">
+                    <p className="text-gray-700 mb-8 leading-relaxed text-lg">
                         {subtitle}
                     </p>
                 )}

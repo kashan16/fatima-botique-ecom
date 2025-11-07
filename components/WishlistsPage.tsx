@@ -52,11 +52,11 @@ export const WishlistsPage = () => {
 
     if (!isSignedIn) {
         return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <Card className="p-8 text-center max-w-md shadow-lg bg-white rounded-lg">
-            <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <div className="min-h-screen flex items-center justify-center p-4 relative">
+            <Card className="p-8 text-center max-w-md shadow-lg bg-white/80 backdrop-blur-sm rounded-lg border border-white/20">
+            <Lock className="w-16 h-16 text-gray-500 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-gray-800 mb-4 font-sans">Sign In Required</h2>
-            <p className="text-gray-600 mb-6">Please sign in to view and manage your wishlist.</p>
+            <p className="text-gray-700 mb-6">Please sign in to view and manage your wishlist.</p>
             <Button
                 onClick={() => router.push('/sign-in')}
                 className="bg-gray-800 text-white hover:bg-gray-700 transition-colors"
@@ -67,7 +67,7 @@ export const WishlistsPage = () => {
             <Button
                 variant="ghost"
                 onClick={() => router.push('/')}
-                className="mt-3 w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                className="mt-3 w-full text-gray-600 hover:text-gray-800 hover:bg-gray-100/50 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Continue Shopping
@@ -79,19 +79,19 @@ export const WishlistsPage = () => {
 
     if (wishlistLoading) {
         return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-gray-900" />
+        <div className="min-h-screen flex items-center justify-center relative">
+            <Loader2 className="h-12 w-12 animate-spin text-gray-800" />
         </div>
         );
     }
 
     if (wishlistError) {
         return (
-        <div className="min-h-screen bg-gray-50 py-12">
+        <div className="min-h-screen py-12 relative">
             <div className="container mx-auto px-4">
-            <Card className="p-8 text-center max-w-2xl mx-auto bg-white border border-red-200 shadow-sm rounded-lg">
+            <Card className="p-8 text-center max-w-2xl mx-auto bg-white/80 backdrop-blur-sm border border-red-200/50 shadow-sm rounded-lg">
                 <h1 className="text-2xl font-bold text-red-800 mb-4 font-sans">Error Loading Wishlist</h1>
-                <p className="text-gray-600 mb-6">{wishlistError}</p>
+                <p className="text-gray-700 mb-6">{wishlistError}</p>
                 <Button
                 onClick={() => window.location.reload()}
                 className="bg-red-600 text-white hover:bg-red-700 transition-colors"
@@ -106,15 +106,15 @@ export const WishlistsPage = () => {
 
     if (!wishlist || wishlistItems.length === 0) {
         return (
-        <div className="min-h-screen bg-gray-50 py-12">
+        <div className="min-h-screen py-12 relative">
             <div className="container mx-auto px-4">
-            <Card className="p-12 text-center max-w-2xl mx-auto bg-white border border-gray-200 shadow-sm rounded-lg">
-                <Heart className="w-24 h-24 text-gray-400 mx-auto mb-6" />
+            <Card className="p-12 text-center max-w-2xl mx-auto bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg">
+                <Heart className="w-24 h-24 text-gray-500 mx-auto mb-6" />
                 <h1 className="text-3xl font-bold text-gray-800 mb-4 font-sans">Your Wishlist is Empty</h1>
-                <p className="text-gray-600 mb-8 text-lg">Add some beautiful products to your wishlist to see them here.</p>
+                <p className="text-gray-700 mb-8 text-lg">Add some beautiful products to your wishlist to see them here.</p>
                 <Link
                 href="/"
-                className="bg-gray-900 hover:bg-gray-700 text-white px-8 py-4 rounded-md font-semibold font-sans inline-flex items-center transition-colors text-base"
+                className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-md font-semibold font-sans inline-flex items-center transition-colors text-base"
                 >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Continue Shopping
@@ -196,11 +196,11 @@ export const WishlistsPage = () => {
         const finalPrice = basePrice + priceAdjustment;
 
         return (
-        <Card className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 transition-all duration-200 hover:shadow-md">
+        <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-lg shadow-sm mb-4 transition-all duration-200 hover:shadow-md">
             <CardContent className="p-5">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
                 {/* Product Image */}
-                <div className="relative w-24 h-24 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
+                <div className="relative w-24 h-24 bg-gray-100/50 rounded-md overflow-hidden flex-shrink-0 border border-gray-200/50">
                 {primaryImage ? (
                     <Image
                     src={safeImageSrc(primaryImage.object_path)}
@@ -208,9 +208,12 @@ export const WishlistsPage = () => {
                     fill
                     className="object-cover transition-opacity duration-300 ease-in-out hover:opacity-90"
                     sizes="96px"
+                    onError={(e) => {
+                        e.currentTarget.src = '/placeholder.png';
+                    }}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-1">
+                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs text-center p-1">
                     No Image
                     </div>
                 )}
@@ -221,10 +224,10 @@ export const WishlistsPage = () => {
                 <h3 className="font-semibold text-gray-800 text-lg font-sans line-clamp-2">
                     {product?.name || 'Unknown Product'}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-700">
                     Size: {productVariant?.size} | Color: {productVariant?.color}
                 </p>
-                <p className="text-xl font-bold text-gray-900 font-sans">
+                <p className="text-xl font-bold text-gray-800 font-sans">
                     ₹{finalPrice.toFixed(2)}
                 </p>
 
@@ -244,7 +247,7 @@ export const WishlistsPage = () => {
                 <Button
                     onClick={() => handleMoveToCart(item)}
                     disabled={isUpdating || cartLoading || isOutOfStock}
-                    className="bg-gray-900 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    className="bg-gray-800 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
                 >
                     <ShoppingCart className="w-4 h-4" />
                     Move to Cart
@@ -265,7 +268,7 @@ export const WishlistsPage = () => {
                     size="icon"
                     onClick={() => handleRemoveItem(item.id)}
                     disabled={isUpdating}
-                    className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100 transition-colors"
+                    className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100/50 transition-colors"
                 >
                     <Trash2 className="w-4 h-4" />
                 </Button>
@@ -277,11 +280,11 @@ export const WishlistsPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12">
-        <div className="container mx-auto px-4 max-w-7xl">
+        <div className="min-h-screen py-12 relative">
+        <div className="container mx-auto px-4 max-w-7xl relative z-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight font-sans mb-4 sm:mb-0">Your Wishlist</h1>
-            <Badge className="bg-gray-100 text-gray-800 border border-gray-200 text-lg px-4 py-2 rounded-full font-semibold font-sans">
+            <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight font-sans mb-4 sm:mb-0">Your Wishlist</h1>
+            <Badge className="bg-gray-100/80 backdrop-blur-sm text-gray-800 border border-gray-200/50 text-lg px-4 py-2 rounded-full font-semibold font-sans">
                 {wishlistCount} {wishlistCount === 1 ? 'item' : 'items'}
             </Badge>
             </div>
@@ -296,9 +299,9 @@ export const WishlistsPage = () => {
 
             {/* Wishlist Summary */}
             <div className="lg:col-span-1">
-                <Card className="bg-white border border-gray-200 shadow-sm rounded-lg sticky top-8">
-                <CardHeader className="border-b border-gray-200 p-6">
-                    <CardTitle className="text-2xl font-semibold text-gray-900 font-sans">Wishlist Summary</CardTitle>
+                <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg sticky top-8">
+                <CardHeader className="border-b border-gray-200/50 p-6">
+                    <CardTitle className="text-2xl font-semibold text-gray-800 font-sans">Wishlist Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                     <div className="space-y-4 mb-6">
@@ -307,9 +310,9 @@ export const WishlistsPage = () => {
                         <span className="font-semibold font-sans">{wishlistCount}</span>
                     </div>
                     
-                    <Separator className="my-3 bg-gray-200" />
+                    <Separator className="my-3 bg-gray-200/50" />
                     
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-700">
                         <p className="mb-2">• Save items you love for later</p>
                         <p className="mb-2">• Get notified when prices drop</p>
                         <p className="mb-2">• Quickly move items to cart</p>
@@ -319,7 +322,7 @@ export const WishlistsPage = () => {
 
                     <Button
                     onClick={() => router.push('/')}
-                    className="w-full bg-gray-900 text-white hover:bg-gray-700 transition-colors py-4 text-lg font-semibold rounded-md flex items-center justify-center"
+                    className="w-full bg-gray-800 text-white hover:bg-gray-700 transition-colors py-4 text-lg font-semibold rounded-md flex items-center justify-center"
                     >
                     <ArrowLeft className="w-5 h-5 mr-2" />
                     Continue Shopping

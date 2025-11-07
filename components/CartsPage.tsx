@@ -57,9 +57,9 @@ export const CartsPage = () => {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-md shadow-lg bg-white rounded-lg">
-          <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        <Card className="p-8 text-center max-w-md shadow-lg bg-white/80 backdrop-blur-sm rounded-lg border border-white/20">
+          <Lock className="w-16 h-16 text-gray-500 mx-auto mb-4" />
           <h2 className="text-2xl font-semibold text-gray-800 mb-4 font-sans">Sign In Required</h2>
           <p className="text-gray-600 mb-6">Please sign in to view and manage your shopping cart.</p>
           <Button
@@ -72,7 +72,7 @@ export const CartsPage = () => {
           <Button
             variant="ghost"
             onClick={() => router.push('/')}
-            className="mt-3 w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="mt-3 w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100/50 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Continue Shopping
@@ -84,7 +84,7 @@ export const CartsPage = () => {
 
   if (cartLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center relative">
         <Loader2 className="h-12 w-12 animate-spin text-gray-900" />
       </div>
     );
@@ -92,11 +92,11 @@ export const CartsPage = () => {
 
   if (cartError) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen py-12 relative">
         <div className="container mx-auto px-4">
-          <Card className="p-8 text-center max-w-2xl mx-auto bg-white border border-red-200 shadow-sm rounded-lg">
+          <Card className="p-8 text-center max-w-2xl mx-auto bg-white/80 backdrop-blur-sm border border-red-200/50 shadow-sm rounded-lg">
             <h1 className="text-2xl font-bold text-red-800 mb-4 font-sans">Error Loading Cart</h1>
-            <p className="text-gray-600 mb-6">{cartError}</p>
+            <p className="text-gray-700 mb-6">{cartError}</p>
             <Button
               onClick={() => window.location.reload()}
               className="bg-red-600 text-white hover:bg-red-700 transition-colors"
@@ -111,12 +111,12 @@ export const CartsPage = () => {
 
   if (!cart) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen py-12 relative">
         <div className="container mx-auto px-4">
-          <Card className="p-12 text-center max-w-2xl mx-auto bg-white border border-gray-200 shadow-sm rounded-lg">
-            <ShoppingCart className="w-24 h-24 text-gray-400 mx-auto mb-6" />
+          <Card className="p-12 text-center max-w-2xl mx-auto bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg">
+            <ShoppingCart className="w-24 h-24 text-gray-500 mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-gray-800 mb-4 font-sans">Your Cart is Empty</h1>
-            <p className="text-gray-600 mb-8 text-lg">Add some beautiful products to your cart to see them here.</p>
+            <p className="text-gray-700 mb-8 text-lg">Add some beautiful products to your cart to see them here.</p>
             <Link
               href="/"
               className="bg-gray-900 hover:bg-gray-700 text-white px-8 py-4 rounded-md font-semibold font-sans inline-flex items-center transition-colors text-base"
@@ -230,11 +230,11 @@ export const CartsPage = () => {
     const finalPrice = basePrice + priceAdjustment;
 
     return (
-      <Card className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 transition-all duration-200 hover:shadow-md">
+      <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-lg shadow-sm mb-4 transition-all duration-200 hover:shadow-md hover:bg-white/90">
         <CardContent className="p-5">
           <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
             {/* Product Image */}
-            <div className="relative w-24 h-24 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
+            <div className="relative w-24 h-24 bg-gray-100/50 rounded-md overflow-hidden flex-shrink-0 border border-gray-200/50">
               {primaryImage ? (
                 <Image
                   src={safeImageSrc(primaryImage.object_path)}
@@ -242,9 +242,12 @@ export const CartsPage = () => {
                   fill
                   className="object-cover transition-opacity duration-300 ease-in-out hover:opacity-90"
                   sizes="96px"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.png';
+                  }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-1">
+                <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs text-center p-1">
                   No Image
                 </div>
               )}
@@ -255,7 +258,7 @@ export const CartsPage = () => {
               <h3 className="font-semibold text-gray-800 text-lg font-sans line-clamp-2">
                 {product?.name || 'Unknown Product'}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-700">
                 Size: {productVariant?.size} | Color: {productVariant?.color}
               </p>
               <p className="text-xl font-bold text-gray-900 font-sans">
@@ -284,7 +287,7 @@ export const CartsPage = () => {
                     size="icon"
                     onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                     disabled={isUpdating || item.quantity <= 1}
-                    className="h-8 w-8 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors"
+                    className="h-8 w-8 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
                   >
                     <Minus className="w-3 h-3" />
                   </Button>
@@ -296,7 +299,7 @@ export const CartsPage = () => {
                     size="icon"
                     onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                     disabled={isUpdating || item.quantity >= (productVariant?.stock_quantity ?? 0)}
-                    className="h-8 w-8 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors"
+                    className="h-8 w-8 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                   </Button>
@@ -318,7 +321,7 @@ export const CartsPage = () => {
                 size="icon"
                 onClick={() => handleMoveToWishlist(item)}
                 disabled={isUpdating || isOutOfStock || wishlistLoading}
-                className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100 transition-colors"
+                className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100/50 transition-colors"
               >
                 <Heart className="w-4 h-4" />
               </Button>
@@ -327,7 +330,7 @@ export const CartsPage = () => {
                 size="icon"
                 onClick={() => handleMoveToSaveForLater(item.id)}
                 disabled={isUpdating}
-                className="h-9 w-9 text-gray-500 hover:text-blue-500 hover:bg-gray-100 transition-colors"
+                className="h-9 w-9 text-gray-500 hover:text-blue-500 hover:bg-gray-100/50 transition-colors"
                 title="Save for later"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,7 +342,7 @@ export const CartsPage = () => {
                 size="icon"
                 onClick={() => handleRemoveItem(item.id)}
                 disabled={isUpdating}
-                className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100 transition-colors"
+                className="h-9 w-9 text-gray-500 hover:text-red-500 hover:bg-gray-100/50 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -356,11 +359,11 @@ export const CartsPage = () => {
   const totalAmount = subtotal + shippingCost + taxAmount;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="min-h-screen py-12 relative">
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight font-sans mb-4 sm:mb-0">Shopping Cart</h1>
-          <Badge className="bg-gray-100 text-gray-800 border border-gray-200 text-lg px-4 py-2 rounded-full font-semibold font-sans">
+          <Badge className="bg-gray-100/80 backdrop-blur-sm text-gray-800 border border-gray-200/50 text-lg px-4 py-2 rounded-full font-semibold font-sans">
             {cartCount} {cartCount === 1 ? 'item' : 'items'}
           </Badge>
         </div>
@@ -375,8 +378,8 @@ export const CartsPage = () => {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <Card className="bg-white border border-gray-200 shadow-sm rounded-lg sticky top-8">
-              <CardHeader className="border-b border-gray-200 p-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg sticky top-8">
+              <CardHeader className="border-b border-gray-200/50 p-6">
                 <CardTitle className="text-2xl font-semibold text-gray-900 font-sans">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -395,7 +398,7 @@ export const CartsPage = () => {
                     <span className="font-sans">Tax (18%)</span>
                     <span className="font-semibold font-sans">₹{taxAmount.toFixed(2)}</span>
                   </div>
-                  <Separator className="my-3 bg-gray-200" />
+                  <Separator className="my-3 bg-gray-200/50" />
                   <div className="flex justify-between text-xl font-bold text-gray-900">
                     <span className="font-sans">Total</span>
                     <span className="font-sans">₹{totalAmount.toFixed(2)}</span>
@@ -418,7 +421,7 @@ export const CartsPage = () => {
 
                 <Link
                   href="/"
-                  className="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-6 rounded-md font-semibold font-sans mt-3 transition-colors"
+                  className="block w-full text-center bg-gray-100/80 backdrop-blur-sm hover:bg-gray-200/80 text-gray-800 py-3 px-6 rounded-md font-semibold font-sans mt-3 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2 inline" />
                   Continue Shopping

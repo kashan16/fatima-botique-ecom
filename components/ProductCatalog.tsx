@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/ProductCatalog.tsx
 'use client';
 
 import { useCart } from '@/hooks/useCart';
@@ -21,10 +20,9 @@ import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProductCard } from './common/ProductCard';
 
-
 // Skeleton Loader
 const ProductCardSkeleton = () => (
-    <Card className="overflow-hidden rounded-xl border border-gray-100 animate-pulse">
+    <Card className="overflow-hidden rounded-xl border border-gray-100 animate-pulse bg-white/80 backdrop-blur-sm">
         <div className="aspect-square w-full bg-gray-200" />
         <CardContent className="p-5">
             <div className="mb-3 h-5 bg-gray-200 rounded w-3/4" />
@@ -40,7 +38,6 @@ const FilterSidebar = ({
     filters,
     onFiltersChange,
     onClearFilters,
-    //isOpen,
 }: {
     categories: any[];
     filters: ProductFilters;
@@ -73,7 +70,7 @@ const FilterSidebar = ({
         <div className="space-y-8 p-1">
             {/* Categories */}
             <div>
-                <Label className="mb-4 block text-lg font-semibold text-gray-900">Categories</Label>
+                <Label className="mb-4 block text-lg font-semibold text-gray-800">Categories</Label>
                 <div className="space-y-3">
                     <button
                         onClick={() => handleCategoryChange('all')}
@@ -103,7 +100,7 @@ const FilterSidebar = ({
 
             {/* Price Range */}
             <div>
-                <Label className="mb-4 block text-lg font-semibold text-gray-900">Price Range</Label>
+                <Label className="mb-4 block text-lg font-semibold text-gray-800">Price Range</Label>
                 <div className="space-y-6 px-2">
                     <Slider
                         value={priceRange}
@@ -153,7 +150,6 @@ export const ProductCatalog = () => {
         order: 'desc'
     });
     const [showFilters, setShowFilters] = useState(false);
-    //const [isFilterOpen, setIsFilterOpen] = useState(false);
     
     // Build filters from URL
     useEffect(() => {
@@ -250,12 +246,12 @@ export const ProductCatalog = () => {
     const isLoading = productsLoading || categoriesLoading;
     
     return (
-        <div className="min-h-screen bg-white">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl w-full">
+        <div className="min-h-screen relative">
+            <div className="container mx-auto px-4 max-w-7xl py-8 relative z-10">
                 {/* Header */}
                 <div className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4 font-serif">Our Collection</h1>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                    <h1 className="text-4xl font-bold text-gray-800 mb-4 font-serif">Our Collection</h1>
+                    <p className="text-lg text-gray-700 max-w-2xl mx-auto">
                         Discover carefully curated pieces crafted for your unique style
                     </p>
                 </div>
@@ -263,7 +259,7 @@ export const ProductCatalog = () => {
                 {/* Controls Bar - Minimal */}
                 <div className="mb-8 flex items-center justify-between">
                     {/* Results Count */}
-                    <div className="text-gray-600">
+                    <div className="text-gray-700">
                         {isLoading ? 'Loading...' : `${products.length} products`}
                     </div>
                     
@@ -277,7 +273,7 @@ export const ProductCatalog = () => {
                                 setSortOption({ sort_by, order });
                             }}
                         >
-                            <SelectTrigger className="w-[140px] border-gray-300 bg-white hover:bg-gray-50">
+                            <SelectTrigger className="w-[140px] border-gray-300 bg-white/80 backdrop-blur-sm hover:bg-gray-50">
                                 <SelectValue placeholder="Sort" />
                             </SelectTrigger>
                             <SelectContent>
@@ -294,7 +290,7 @@ export const ProductCatalog = () => {
                         <Button
                             variant="outline"
                             onClick={() => setShowFilters(!showFilters)}
-                            className="border-gray-300 bg-white hover:bg-gray-50"
+                            className="border-gray-300 bg-white/80 backdrop-blur-sm hover:bg-gray-50"
                         >
                             <Filter className="h-4 w-4 mr-2" />
                             Filters
@@ -305,10 +301,10 @@ export const ProductCatalog = () => {
 
                 {/* Full-width Filters Section */}
                 {showFilters && (
-                    <div className="mb-8 rounded-2xl bg-gray-50 p-8 border border-gray-200">
+                    <div className="mb-8 rounded-2xl bg-gray-50/80 backdrop-blur-sm p-8 border border-gray-200/50">
                         <div className="max-w-4xl mx-auto">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-2xl font-bold text-gray-900">Refine Your Search</h3>
+                                <h3 className="text-2xl font-bold text-gray-800">Refine Your Search</h3>
                                 <Button
                                     variant="ghost"
                                     onClick={() => setShowFilters(false)}
@@ -365,8 +361,8 @@ export const ProductCatalog = () => {
                             </div>
                             ) : products.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4">No products found</h3>
-                                <Button onClick={handleClearFilters} variant="outline">Clear Filters</Button>
+                                <h3 className="text-2xl font-bold text-gray-800 mb-4">No products found</h3>
+                                <Button onClick={handleClearFilters} variant="outline" className="border-gray-300">Clear Filters</Button>
                                 </div>
                             ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">

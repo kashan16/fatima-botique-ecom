@@ -6,7 +6,7 @@ import { Address, AddressType, CreateAddressInput } from '@/types';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-// ShadCN Components (same as before)
+// ShadCN Components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +53,6 @@ export default function ProfilesPage() {
     error: profileError,
     updateProfile,
     fetchProfile,
-    //createProfile,
   } = useProfile();
 
   const {
@@ -266,7 +265,7 @@ export default function ProfilesPage() {
   // Loading UI
   if (profileLoading || addressesLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         <div className="flex flex-col gap-8">
           <Skeleton className="h-8 w-64" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -278,7 +277,7 @@ export default function ProfilesPage() {
     );
   }
 
-  // mergedProfile approximation (you previously used mergedProfile)
+  // mergedProfile approximation
   const mergedProfile = {
     full_name: profile?.username ?? '',
     email: undefined,
@@ -295,14 +294,14 @@ export default function ProfilesPage() {
   const defaultAddress = addresses.find(a => a.is_default) ?? null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 font-sans">My Profile</h1>
-        <p className="text-gray-600 mt-2">Manage your personal information and addresses</p>
+        <h1 className="text-3xl font-bold text-gray-800 font-sans">My Profile</h1>
+        <p className="text-gray-700 mt-2">Manage your personal information and addresses</p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
+        <TabsList className="grid w-full max-w-md grid-cols-2 mb-8 bg-white/80 backdrop-blur-sm">
           <TabsTrigger value="profile" className="font-sans">
             <User className="w-4 h-4 mr-2" />
             Profile Info
@@ -316,7 +315,7 @@ export default function ProfilesPage() {
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <Card className="lg:col-span-1">
+            <Card className="lg:col-span-1 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5" />
@@ -325,7 +324,7 @@ export default function ProfilesPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                  <div className="w-16 h-16 bg-gray-200/50 rounded-full flex items-center justify-center overflow-hidden">
                     {mergedProfile.profile_image_url ? (
                       <Image
                         width={64}
@@ -335,14 +334,14 @@ export default function ProfilesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-8 h-8 text-gray-400" />
+                      <User className="w-8 h-8 text-gray-500" />
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-800">
                       {mergedProfile.full_name || 'User'}
                     </h3>
-                    <p className="text-sm text-gray-600">Member</p>
+                    <p className="text-sm text-gray-700">Member</p>
                   </div>
                 </div>
 
@@ -350,16 +349,16 @@ export default function ProfilesPage() {
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
-                    <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">{mergedProfile.email ?? '—'}</span>
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">{mergedProfile.email ?? '—'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">{mergedProfile.phone_number ?? 'Not set'}</span>
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">{mergedProfile.phone_number ?? 'Not set'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">
                       Joined {mergedProfile.created_at ? new Date(mergedProfile.created_at).toLocaleDateString() : 'Recently'}
                     </span>
                   </div>
@@ -378,7 +377,7 @@ export default function ProfilesPage() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Account Details</CardTitle>
@@ -389,7 +388,7 @@ export default function ProfilesPage() {
                     </Button>
                   ) : (
                     <div className="flex gap-2">
-                      <Button onClick={handleProfileSave} size="sm" className="bg-gray-900 hover:bg-gray-700" disabled={isProfileSaving}>
+                      <Button onClick={handleProfileSave} size="sm" className="bg-gray-800 hover:bg-gray-700" disabled={isProfileSaving}>
                         {isProfileSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />} Save
                       </Button>
                       <Button onClick={handleProfileCancel} variant="outline" size="sm" className="border-gray-300" disabled={isProfileSaving}>Cancel</Button>
@@ -402,13 +401,13 @@ export default function ProfilesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="username" className="text-gray-700">Username</Label>
-                    <Input id="username" value={isEditingProfile ? profileForm.username : profile?.username ?? 'Not set'} onChange={(e) => setProfileForm({...profileForm, username: e.target.value})} disabled={!isEditingProfile || profileLoading} placeholder="Enter your username" className="mt-1" />
-                    {isEditingProfile && <p className="text-xs text-gray-500">Username must be 3-30 characters, letters, numbers, and underscores only</p>}
+                    <Input id="username" value={isEditingProfile ? profileForm.username : profile?.username ?? 'Not set'} onChange={(e) => setProfileForm({...profileForm, username: e.target.value})} disabled={!isEditingProfile || profileLoading} placeholder="Enter your username" className="mt-1 bg-white/50 backdrop-blur-sm" />
+                    {isEditingProfile && <p className="text-xs text-gray-600">Username must be 3-30 characters, letters, numbers, and underscores only</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-gray-700">Phone Number</Label>
-                    <Input id="phone" value={isEditingProfile ? profileForm.phone_number : profile?.phone_number ?? 'Not set'} onChange={(e) => setProfileForm({...profileForm, phone_number: e.target.value})} disabled={!isEditingProfile || profileLoading} placeholder="Enter your phone number" className="mt-1" />
-                    {isEditingProfile && <p className="text-xs text-gray-500">10 digits, must start with 6,7,8, or 9</p>}
+                    <Input id="phone" value={isEditingProfile ? profileForm.phone_number : profile?.phone_number ?? 'Not set'} onChange={(e) => setProfileForm({...profileForm, phone_number: e.target.value})} disabled={!isEditingProfile || profileLoading} placeholder="Enter your phone number" className="mt-1 bg-white/50 backdrop-blur-sm" />
+                    {isEditingProfile && <p className="text-xs text-gray-600">10 digits, must start with 6,7,8, or 9</p>}
                   </div>
                 </div>
 
@@ -430,7 +429,7 @@ export default function ProfilesPage() {
 
         {/* Addresses Tab */}
         <TabsContent value="addresses" className="space-y-6">
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -440,50 +439,50 @@ export default function ProfilesPage() {
                 <div>
                   <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button onClick={handleOpenAddAddress} className="bg-gray-900 hover:bg-gray-700"><Plus className="w-4 h-4 mr-2" /> Add New Address</Button>
+                      <Button onClick={handleOpenAddAddress} className="bg-gray-800 hover:bg-gray-700"><Plus className="w-4 h-4 mr-2" /> Add New Address</Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl bg-white/90 backdrop-blur-sm">
                       <DialogHeader><DialogTitle>{editingAddressId ? 'Edit Address' : 'Add New Address'}</DialogTitle></DialogHeader>
                       <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                        {/* Form inputs (same as earlier) */}
+                        {/* Form inputs */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="full_name">Full Name *</Label>
-                            <Input id="full_name" value={addressForm.full_name} onChange={(e) => setAddressForm({...addressForm, full_name: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} />
+                            <Input id="full_name" value={addressForm.full_name} onChange={(e) => setAddressForm({...addressForm, full_name: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="phone">Phone Number *</Label>
-                            <Input id="phone" value={addressForm.phone_number} onChange={(e) => setAddressForm({...addressForm, phone_number: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} />
+                            <Input id="phone" value={addressForm.phone_number} onChange={(e) => setAddressForm({...addressForm, phone_number: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                           </div>
                         </div>
 
                         <div className="space-y-2">
                           <Label htmlFor="address_line1">Address Line 1 *</Label>
-                          <Input id="address_line1" value={addressForm.address_line1} onChange={(e) => setAddressForm({...addressForm, address_line1: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} />
+                          <Input id="address_line1" value={addressForm.address_line1} onChange={(e) => setAddressForm({...addressForm, address_line1: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                         </div>
 
                         <div className="space-y-2">
                           <Label htmlFor="address_line2">Address Line 2</Label>
-                          <Input id="address_line2" value={addressForm.address_line2} onChange={(e) => setAddressForm({...addressForm, address_line2: e.target.value})} disabled={isCreatingAddress || isUpdatingAddress} />
+                          <Input id="address_line2" value={addressForm.address_line2} onChange={(e) => setAddressForm({...addressForm, address_line2: e.target.value})} disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                         </div>
 
                         <div className="space-y-2">
                           <Label htmlFor="landmark">Landmark</Label>
-                          <Input id="landmark" value={addressForm.landmark} onChange={(e) => setAddressForm({...addressForm, landmark: e.target.value})} disabled={isCreatingAddress || isUpdatingAddress} />
+                          <Input id="landmark" value={addressForm.landmark} onChange={(e) => setAddressForm({...addressForm, landmark: e.target.value})} disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="city">City *</Label>
-                            <Input id="city" value={addressForm.city} onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} />
+                            <Input id="city" value={addressForm.city} onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="state">State *</Label>
-                            <Input id="state" value={addressForm.state} onChange={(e) => setAddressForm({...addressForm, state: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} />
+                            <Input id="state" value={addressForm.state} onChange={(e) => setAddressForm({...addressForm, state: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="pincode">Pincode *</Label>
-                            <Input id="pincode" value={addressForm.pincode} onChange={(e) => setAddressForm({...addressForm, pincode: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} />
+                            <Input id="pincode" value={addressForm.pincode} onChange={(e) => setAddressForm({...addressForm, pincode: e.target.value})} required disabled={isCreatingAddress || isUpdatingAddress} className="bg-white/50 backdrop-blur-sm" />
                           </div>
                         </div>
 
@@ -491,7 +490,7 @@ export default function ProfilesPage() {
                           <div className="space-y-2">
                             <Label htmlFor="address_type">Address Type</Label>
                             <Select value={addressForm.address_type} onValueChange={(value: AddressType) => setAddressForm({...addressForm, address_type: value})} disabled={isCreatingAddress || isUpdatingAddress}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger className="bg-white/50 backdrop-blur-sm"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="both">Both (Shipping & Billing)</SelectItem>
                                 <SelectItem value="shipping">Shipping Only</SelectItem>
@@ -506,7 +505,7 @@ export default function ProfilesPage() {
                         </div>
 
                         <div className="flex gap-3 pt-2">
-                          <Button onClick={handleAddressSubmit} disabled={isCreatingAddress || isUpdatingAddress} className="flex-1 bg-gray-900 hover:bg-gray-700">
+                          <Button onClick={handleAddressSubmit} disabled={isCreatingAddress || isUpdatingAddress} className="flex-1 bg-gray-800 hover:bg-gray-700">
                             {(isCreatingAddress || isUpdatingAddress) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />} {editingAddressId ? 'Update' : 'Save'} Address
                           </Button>
                           <Button onClick={() => setIsAddressDialogOpen(false)} variant="outline" className="border-gray-300" disabled={isCreatingAddress || isUpdatingAddress}>Cancel</Button>
@@ -522,18 +521,18 @@ export default function ProfilesPage() {
               {addressesLoading ? (
                 <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-full" />)}</div>
               ) : addresses.length === 0 ? (
-                <Card className="p-12 text-center border-gray-200">
-                  <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <Card className="p-12 text-center border-gray-200 bg-white/80 backdrop-blur-sm">
+                  <Home className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-800 mb-2 font-sans">No Addresses Yet</h3>
-                  <p className="text-gray-600 mb-6">Add your first address to make checkout faster</p>
-                  <Button onClick={handleOpenAddAddress} className="bg-gray-900 hover:bg-gray-700"><Plus className="w-4 h-4 mr-2" /> Add Your First Address</Button>
+                  <p className="text-gray-700 mb-6">Add your first address to make checkout faster</p>
+                  <Button onClick={handleOpenAddAddress} className="bg-gray-800 hover:bg-gray-700"><Plus className="w-4 h-4 mr-2" /> Add Your First Address</Button>
                 </Card>
               ) : (
                 <div className="space-y-4">
                   {defaultAddress && (
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-3">Default Address</h4>
-                      <Card className="border-2 border-gray-900 bg-gray-50">
+                      <h4 className="font-semibold text-gray-800 mb-3">Default Address</h4>
+                      <Card className="border-2 border-gray-800 bg-gray-50/80 backdrop-blur-sm">
                         <CardContent className="p-4">
                           <AddressCard address={defaultAddress} onEdit={handleEditAddress} onDelete={handleDeleteAddress} onSetDefault={handleSetDefault} isUpdating={isUpdatingAddress} isDeleting={isDeletingAddress} isDefault />
                         </CardContent>
@@ -543,10 +542,10 @@ export default function ProfilesPage() {
 
                   {addresses.filter(a => !a.is_default).length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-3">Other Addresses ({addresses.filter(a => !a.is_default).length})</h4>
+                      <h4 className="font-semibold text-gray-800 mb-3">Other Addresses ({addresses.filter(a => !a.is_default).length})</h4>
                       <div className="space-y-4">
                         {addresses.filter(a => !a.is_default).map(address => (
-                          <Card key={address.id} className="border-gray-200">
+                          <Card key={address.id} className="border-gray-200/50 bg-white/80 backdrop-blur-sm">
                             <CardContent className="p-4">
                               <AddressCard address={address} onEdit={handleEditAddress} onDelete={handleDeleteAddress} onSetDefault={handleSetDefault} isUpdating={isUpdatingAddress} isDeleting={isDeletingAddress} />
                             </CardContent>
@@ -580,11 +579,11 @@ function AddressCard({ address, onEdit, onDelete, onSetDefault, isUpdating, isDe
     <div className="flex items-start justify-between">
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-2">
-          <h4 className="font-semibold text-gray-900 font-sans">{address.full_name}</h4>
-          {isDefault && <Badge className="bg-gray-900 text-white"><Check className="w-3 h-3 mr-1" />Default</Badge>}
+          <h4 className="font-semibold text-gray-800 font-sans">{address.full_name}</h4>
+          {isDefault && <Badge className="bg-gray-800 text-white"><Check className="w-3 h-3 mr-1" />Default</Badge>}
           <Badge className="bg-blue-50 text-blue-700 border-blue-200">{address.address_type.charAt(0).toUpperCase() + address.address_type.slice(1)}</Badge>
         </div>
-        <div className="text-sm text-gray-600 space-y-1">
+        <div className="text-sm text-gray-700 space-y-1">
           <p className="flex items-center gap-2"><Phone className="w-4 h-4" />{address.phone_number}</p>
           <p>{address.address_line1}{address.address_line2 && `, ${address.address_line2}`}</p>
           {address.landmark && <p>Landmark: {address.landmark}</p>}
@@ -599,4 +598,3 @@ function AddressCard({ address, onEdit, onDelete, onSetDefault, isUpdating, isDe
     </div>
   );
 }
-

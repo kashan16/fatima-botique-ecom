@@ -28,7 +28,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 
-// Helper functions moved outside component to be accessible by OrderCard
+// Helper functions
 const getPaymentStatusVariant = (status: PaymentStatus) => {
   const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     pending: "outline",
@@ -172,19 +172,19 @@ export const OrdersPage = () => {
   // Authentication State
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-md w-full text-center border-0 shadow-lg">
+      <div className="min-h-screen flex items-center justify-center p-6 relative">
+        <Card className="max-w-md w-full text-center border-0 shadow-lg bg-white/80 backdrop-blur-sm">
           <CardContent className="p-8">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 bg-gray-100/50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-gray-500" />
             </div>
-            <h2 className="text-2xl font-semibold text-foreground mb-3">Sign In Required</h2>
-            <p className="text-muted-foreground mb-6">Please sign in to view your order history.</p>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-3">Sign In Required</h2>
+            <p className="text-gray-700 mb-6">Please sign in to view your order history.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={() => router.push('/sign-in')} className="gap-2">
+              <Button onClick={() => router.push('/sign-in')} className="gap-2 bg-gray-900 hover:bg-gray-700">
                 Sign In <ArrowRight className="w-4 h-4" />
               </Button>
-              <Button variant="outline" onClick={() => router.push('/')} className="gap-2">
+              <Button variant="outline" onClick={() => router.push('/')} className="gap-2 border-gray-300">
                 <ArrowLeft className="w-4 h-4" /> Continue Shopping
               </Button>
             </div>
@@ -197,20 +197,20 @@ export const OrdersPage = () => {
   // Error State
   if (error && orders.length === 0) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen py-12 relative">
         <div className="container mx-auto px-4 max-w-4xl">
-          <Card className="text-center border-0 shadow-lg">
+          <Card className="text-center border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-8">
-              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <X className="w-8 h-8 text-destructive" />
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="w-8 h-8 text-red-600" />
               </div>
-              <h2 className="text-2xl font-semibold text-foreground mb-3">Error Loading Orders</h2>
-              <p className="text-muted-foreground mb-6">{error}</p>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-3">Error Loading Orders</h2>
+              <p className="text-gray-700 mb-6">{error}</p>
               <div className="flex gap-3 justify-center">
-                <Button onClick={() => refresh()} className="gap-2">
+                <Button onClick={() => refresh()} className="gap-2 bg-gray-900 hover:bg-gray-700">
                   <RefreshCw className="w-4 h-4" /> Try Again
                 </Button>
-                <Button variant="outline" onClick={() => router.push('/')}>Go Shopping</Button>
+                <Button variant="outline" onClick={() => router.push('/')} className="border-gray-300">Go Shopping</Button>
               </div>
             </CardContent>
           </Card>
@@ -222,17 +222,17 @@ export const OrdersPage = () => {
   // Empty State
   if (orders.length === 0) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen py-12 relative">
         <div className="container mx-auto px-4 max-w-4xl">
-          <Card className="text-center border-0 shadow-lg">
+          <Card className="text-center border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-12">
-              <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                <Package className="w-12 h-12 text-muted-foreground" />
+              <div className="w-24 h-24 bg-gray-100/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Package className="w-12 h-12 text-gray-500" />
               </div>
-              <h1 className="text-3xl font-semibold text-foreground mb-4">No Orders Yet</h1>
-              <p className="text-muted-foreground mb-8 text-lg">Your order history will appear here once you start shopping.</p>
+              <h1 className="text-3xl font-semibold text-gray-800 mb-4">No Orders Yet</h1>
+              <p className="text-gray-700 mb-8 text-lg">Your order history will appear here once you start shopping.</p>
               <Link href="/">
-                <Button size="lg" className="gap-2">
+                <Button size="lg" className="gap-2 bg-gray-900 hover:bg-gray-700">
                   Start Shopping <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -244,19 +244,19 @@ export const OrdersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
+    <div className="min-h-screen py-8 relative">
+      <div className="container mx-auto px-4 max-w-6xl relative z-10">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold text-foreground tracking-tight">Order History</h1>
-            <p className="text-muted-foreground">Manage and track your orders</p>
+            <h1 className="text-3xl font-semibold text-gray-800 tracking-tight">Order History</h1>
+            <p className="text-gray-700">Manage and track your orders</p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="px-3 py-2">
+            <Badge variant="secondary" className="px-3 py-2 bg-gray-100/80 backdrop-blur-sm text-gray-800">
               {total !== null ? `${orders.length} of ${total}` : `${orders.length}`} orders
             </Badge>
-            <Button onClick={() => refresh()} variant="outline" className="gap-2">
+            <Button onClick={() => refresh()} variant="outline" className="gap-2 border-gray-300">
               <RefreshCw className="w-4 h-4" /> Refresh
             </Button>
           </div>
@@ -283,7 +283,7 @@ export const OrdersPage = () => {
               onClick={handleLoadMore} 
               disabled={loadingMore} 
               variant="outline" 
-              className="px-8 gap-2"
+              className="px-8 gap-2 border-gray-300"
             >
               {loadingMore ? (
                 <>
@@ -298,7 +298,7 @@ export const OrdersPage = () => {
         )}
 
         {total !== null && (
-          <div className="text-center mt-6 text-muted-foreground text-sm">
+          <div className="text-center mt-6 text-gray-700 text-sm">
             Showing {orders.length} of {total} orders
           </div>
         )}
@@ -310,7 +310,7 @@ export const OrdersPage = () => {
 // Loading Skeleton Component
 function OrdersLoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen py-8 relative">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="space-y-2">
@@ -325,7 +325,7 @@ function OrdersLoadingSkeleton() {
 
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <Card key={i} className="rounded-xl border shadow-sm">
+            <Card key={i} className="rounded-xl border shadow-sm bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
                   <div className="flex-1 space-y-4">
@@ -396,7 +396,7 @@ function OrderCard({
   const orderStatusLabel = formatOrderStatusLabel(order.order_status);
 
   return (
-    <Card className="rounded-xl border shadow-sm hover:shadow-md transition-shadow">
+    <Card className="rounded-xl border shadow-sm hover:shadow-md transition-shadow bg-white/80 backdrop-blur-sm">
       <CardContent className="p-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Order Info */}
@@ -405,12 +405,12 @@ function OrderCard({
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h3 className="font-semibold text-foreground text-lg">Order #{order.order_number}</h3>
+                  <h3 className="font-semibold text-gray-800 text-lg">Order #{order.order_number}</h3>
                   <Badge variant={getPaymentStatusVariant(order.payment_status)} className="text-sm">
                     {paymentStatusLabel.title}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-gray-700">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>{new Date(order.created_at).toLocaleDateString()}</span>
@@ -420,7 +420,7 @@ function OrderCard({
                     <span>{new Date(order.created_at).toLocaleTimeString()}</span>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">{orderStatusLabel.description}</p>
+                <p className="text-sm text-gray-700">{orderStatusLabel.description}</p>
               </div>
             </div>
 
@@ -428,46 +428,46 @@ function OrderCard({
             <div className="space-y-3">
               {order.order_items.slice(0, 2).map((item) => (
                 <div key={item.id} className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Package className="w-4 h-4 text-muted-foreground" />
+                  <div className="w-12 h-12 bg-gray-100/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Package className="w-4 h-4 text-gray-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm line-clamp-1">{item.product_name}</p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="font-medium text-gray-800 text-sm line-clamp-1">{item.product_name}</p>
+                    <p className="text-gray-700 text-xs">
                       {item.size} • {item.color} • Qty: {item.quantity}
                     </p>
                   </div>
                   <div className="text-right text-sm">
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-gray-800">
                       ₹{(Number(item.price_at_purchase) * Number(item.quantity)).toFixed(2)}
                     </p>
                   </div>
                 </div>
               ))}
               {order.order_items.length > 2 && (
-                <p className="text-sm text-muted-foreground">+{order.order_items.length - 2} more items</p>
+                <p className="text-sm text-gray-700">+{order.order_items.length - 2} more items</p>
               )}
             </div>
 
             {/* Order Summary */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm pt-2">
               <div>
-                <p className="text-muted-foreground">Items Total</p>
-                <p className="font-semibold text-foreground">₹{Number(order.subtotal).toFixed(2)}</p>
+                <p className="text-gray-700">Items Total</p>
+                <p className="font-semibold text-gray-800">₹{Number(order.subtotal).toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Shipping</p>
-                <p className="font-semibold text-foreground">
+                <p className="text-gray-700">Shipping</p>
+                <p className="font-semibold text-gray-800">
                   {order.shipping_cost === 0 ? 'FREE' : `₹${Number(order.shipping_cost).toFixed(2)}`}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Tax</p>
-                <p className="font-semibold text-foreground">₹{Number(order.tax_amount).toFixed(2)}</p>
+                <p className="text-gray-700">Tax</p>
+                <p className="font-semibold text-gray-800">₹{Number(order.tax_amount).toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground font-medium">Total</p>
-                <p className="font-bold text-foreground text-lg">₹{Number(order.total_amount).toFixed(2)}</p>
+                <p className="text-gray-700 font-medium">Total</p>
+                <p className="font-bold text-gray-800 text-lg">₹{Number(order.total_amount).toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -476,7 +476,7 @@ function OrderCard({
           <Separator className="lg:hidden" />
           <div className="lg:w-48 flex flex-col gap-2">
             <Link href={`/account/orders/${order.id}`}>
-              <Button variant="outline" className="w-full gap-2">
+              <Button variant="outline" className="w-full gap-2 border-gray-300">
                 View Details
               </Button>
             </Link>
@@ -486,7 +486,7 @@ function OrderCard({
                 onClick={() => onTrack(order.id)}
                 disabled={isUpdating}
                 variant="outline"
-                className="w-full gap-2"
+                className="w-full gap-2 border-gray-300"
               >
                 <Truck className="w-4 h-4" />
                 Track
@@ -498,7 +498,7 @@ function OrderCard({
                 variant="outline"
                 onClick={() => onCancel(order.id)}
                 disabled={isUpdating}
-                className="w-full gap-2 text-destructive border-destructive/20 hover:bg-destructive/10"
+                className="w-full gap-2 text-red-600 border-red-200 hover:bg-red-50"
               >
                 {isUpdating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

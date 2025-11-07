@@ -1,4 +1,3 @@
-// components/ProductPage.tsx
 'use client';
 import { useCart } from '@/hooks/useCart';
 import { useProduct } from '@/hooks/useProduct';
@@ -70,11 +69,6 @@ export const ProductsPage = () => {
     if (!productDetails) return [];
     return Array.from(new Set(productDetails.variants?.map((v: ProductVariant) => v.color) || []));
   }, [productDetails]);
-
-  /*const allImages = useMemo(() => {
-    if (!productDetails) return [];
-    return productDetails.images || [];
-  }, [productDetails]);*/
 
   const primaryImages = useMemo(() => {
     if (!productDetails) return [];
@@ -206,16 +200,16 @@ export const ProductsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="min-h-screen flex items-center justify-center relative">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800"></div>
       </div>
     );
   }
 
   if (productError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="p-8 text-center shadow-lg bg-white rounded-lg">
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        <Card className="p-8 text-center shadow-lg bg-white/80 backdrop-blur-sm rounded-lg border border-white/20">
           <h2 className="text-2xl font-semibold text-red-600 mb-4 font-sans">Error Loading Product</h2>
           <p className="text-gray-700 mb-6">{productError}</p>
           <Button
@@ -232,8 +226,8 @@ export const ProductsPage = () => {
 
   if (!productDetails) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="p-8 text-center shadow-lg bg-white rounded-lg">
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        <Card className="p-8 text-center shadow-lg bg-white/80 backdrop-blur-sm rounded-lg border border-white/20">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4 font-sans">Product Not Found</h2>
           <Button
             onClick={() => router.push('/')}
@@ -252,28 +246,28 @@ export const ProductsPage = () => {
     : productDetails.base_price;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="min-h-screen py-12 relative">
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="mb-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+          className="mb-8 text-gray-600 hover:text-gray-800 hover:bg-gray-100/50 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Products
         </Button>
 
-        <Card className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden">
+        <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm rounded-lg overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 p-8 lg:p-12">
             {/* Image Gallery - Fixed Size Container */}
             <div className="space-y-6">
               {/* Main Image Container - Fixed Size */}
-              <div className="relative h-[500px] w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+              <div className="relative h-[500px] w-full bg-gray-100/50 rounded-lg overflow-hidden border border-gray-200/50 flex items-center justify-center">
                 {primaryImages.length > 0 ? (
                   <>
                     {imageLoading && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
                       </div>
                     )}
                     <Image
@@ -290,9 +284,9 @@ export const ProductsPage = () => {
                     />
                   </>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
-                    <Plus className="w-16 h-16 text-gray-300" />
-                    <span className="text-sm text-gray-500 mt-2 font-sans">No image available</span>
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 bg-gray-50/50">
+                    <Plus className="w-16 h-16 text-gray-400" />
+                    <span className="text-sm text-gray-600 mt-2 font-sans">No image available</span>
                   </div>
                 )}
               </div>
@@ -307,11 +301,11 @@ export const ProductsPage = () => {
                         setCurrentImageIndex(index);
                         setImageLoading(true);
                       }}
-                      className={`relative h-24 w-full bg-gray-100 rounded-md overflow-hidden border-2 transition-all duration-200 ${
+                      className={`relative h-24 w-full bg-gray-100/50 rounded-md overflow-hidden border-2 transition-all duration-200 ${
                         currentImageIndex === index
-                          ? 'border-gray-900 shadow-md'
-                          : 'border-transparent hover:border-gray-300'
-                      } focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2`}
+                          ? 'border-gray-800 shadow-md'
+                          : 'border-transparent hover:border-gray-400'
+                      } focus-visible:ring-2 focus-visible:ring-gray-800 focus-visible:ring-offset-2`}
                     >
                       <Image
                         src={safeImageSrc(image.object_path)}
@@ -321,7 +315,7 @@ export const ProductsPage = () => {
                         className="object-cover w-full h-full"
                       />
                       {currentImageIndex === index && (
-                        <div className="absolute inset-0 bg-gray-900/10 backdrop-blur-[1px] rounded-md" />
+                        <div className="absolute inset-0 bg-gray-800/10 backdrop-blur-[1px] rounded-md" />
                       )}
                     </button>
                   ))}
@@ -333,7 +327,7 @@ export const ProductsPage = () => {
             <div className="space-y-8">
               {/* Product Name and Price */}
               <div>
-                <h1 className="text-4xl font-extrabold text-gray-900 mb-2 tracking-tight font-sans">{productDetails.name}</h1>
+                <h1 className="text-4xl font-extrabold text-gray-800 mb-2 tracking-tight font-sans">{productDetails.name}</h1>
                 <div className="text-4xl font-bold text-gray-800 font-sans">₹{finalPrice.toFixed(2)}</div>
               </div>
 
@@ -353,8 +347,8 @@ export const ProductsPage = () => {
                           onClick={() => handleSizeSelect(size)}
                           className={`min-w-[60px] ${
                             selectedVariant?.size === size
-                              ? 'bg-gray-900 text-white hover:bg-gray-700'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                              ? 'bg-gray-800 text-white hover:bg-gray-700'
+                              : 'bg-white/80 backdrop-blur-sm text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
                           } transition-all duration-200`}
                           disabled={
                             !productDetails.variants.some(v => v.size === size && v.color === selectedVariant?.color) &&
@@ -382,8 +376,8 @@ export const ProductsPage = () => {
                           onClick={() => handleColorSelect(color)}
                           className={`min-w-[80px] ${
                             selectedVariant?.color === color
-                              ? 'bg-gray-900 text-white hover:bg-gray-700'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                              ? 'bg-gray-800 text-white hover:bg-gray-700'
+                              : 'bg-white/80 backdrop-blur-sm text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
                           } transition-all duration-200`}
                           disabled={
                             !productDetails.variants.some(v => v.color === color && v.size === selectedVariant?.size) &&
@@ -422,18 +416,18 @@ export const ProductsPage = () => {
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-9 h-9 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors"
+                    className="w-9 h-9 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white text-gray-700 hover:text-gray-800 transition-colors"
                     disabled={quantity <= 1}
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="w-10 text-center text-lg font-semibold text-gray-900 font-sans">{quantity}</span>
+                  <span className="w-10 text-center text-lg font-semibold text-gray-800 font-sans">{quantity}</span>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(quantity + 1)}
                     disabled={selectedVariant ? quantity >= selectedVariant.stock_quantity : true}
-                    className="w-9 h-9 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors"
+                    className="w-9 h-9 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white text-gray-700 hover:text-gray-800 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -445,7 +439,7 @@ export const ProductsPage = () => {
                 <Button
                   onClick={handleAddToCart}
                   disabled={!selectedVariant || selectedVariant.stock_quantity === 0 || cartLoading}
-                  className="flex-1 bg-gray-900 text-white hover:bg-gray-700 transition-colors py-3 text-base rounded-md font-semibold"
+                  className="flex-1 bg-gray-800 text-white hover:bg-gray-700 transition-colors py-3 text-base rounded-md font-semibold"
                 >
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Add to Cart
@@ -463,7 +457,7 @@ export const ProductsPage = () => {
                   size="icon"
                   onClick={handleWishlistToggle}
                   disabled={wishlistLoading}
-                  className="w-12 h-12 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors shrink-0"
+                  className="w-12 h-12 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-gray-50 text-gray-700 hover:text-gray-800 transition-colors shrink-0"
                 >
                   <Heart
                     className={`w-5 h-5 transition-colors ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`}
@@ -473,10 +467,10 @@ export const ProductsPage = () => {
 
               {/* Product Description */}
               {productDetails.description && (
-                <Card className="bg-gray-50 border border-gray-200 rounded-lg">
+                <Card className="bg-gray-50/50 border border-gray-200/50 rounded-lg">
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-3 font-sans">Description</h3>
-                    <p className="text-gray-600 leading-relaxed font-sans">{productDetails.description}</p>
+                    <p className="text-gray-700 leading-relaxed font-sans">{productDetails.description}</p>
                   </CardContent>
                 </Card>
               )}
