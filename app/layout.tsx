@@ -11,8 +11,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Fatima Botique",
-  description: "Fatima Botique ECom store",
+  title: "Fatima Boutique",
+  description: "Fatima Boutique ECom store",
 };
 
 export default function RootLayout({
@@ -21,18 +21,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${inter.className} antialiased`}>
         {/* Wrapping everything that needs client-only providers */}
         <Providers>
           <UserAssetsProvider>
-            {/* Animated Background Component */}
-            <AnimatedBackground />
+            {/* Enhanced Animated Background Component */}
+            <div className="fixed inset-0 -z-10">
+              <AnimatedBackground />
+            </div>
 
-            {/* Main content with relative positioning */}
-            <div className="relative z-10 min-h-screen flex flex-col md:overflow-y-hidden">
+            {/* Main content with smooth transitions - removed motion wrappers */}
+            <div className="relative z-10 min-h-screen flex flex-col">
+              {/* Navbar */}
               <Navbar />
-              <main className="flex-1">{children}</main>
+              
+              {/* Main content */}
+              <main className="flex-1">
+                {children}
+              </main>
+              
+              {/* Footer */}
               <Footer />
             </div>
           </UserAssetsProvider>

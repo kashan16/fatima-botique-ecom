@@ -2,7 +2,7 @@
 
 import { useClerk, useUser } from "@clerk/nextjs";
 import Menu from '@mui/material/Menu';
-import { motion } from "framer-motion";
+import { easeOut, motion } from "framer-motion";
 import { Heart, LogOut, Menu as MenuIcon, Search, Settings, ShoppingCart, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,9 +36,131 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Enhanced animation variants with proper TypeScript types
+  const navContainerVariants = {
+    hidden: { opacity: 0, y: -50 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: easeOut,
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
+
   const navItemVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0 },
+    hidden: { 
+      opacity: 0, 
+      y: -20,
+      scale: 0.9
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 24
+      }
+    }
+  };
+
+  const logoVariants = {
+    hidden: { 
+      opacity: 0, 
+      x: -30 
+    },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 200,
+        damping: 20,
+        duration: 0.8
+      }
+    },
+    hover: {
+      scale: 1.02,
+      transition: {
+        type: "spring" as const,
+        stiffness: 400,
+        damping: 10
+      }
+    }
+  };
+
+  const buttonVariants = {
+    hover: {
+      scale: 1.05,
+      backgroundColor: "rgba(255, 255, 255, 0.25)",
+      transition: {
+        type: "spring" as const,
+        stiffness: 400,
+        damping: 10
+      }
+    },
+    tap: {
+      scale: 0.95,
+      transition: {
+        type: "spring" as const,
+        stiffness: 400,
+        damping: 10
+      }
+    }
+  };
+
+  const underlineVariants = {
+    hidden: { width: 0 },
+    hover: { 
+      width: "100%",
+      transition: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 20
+      }
+    }
+  };
+
+  const mobileMenuVariants = {
+    closed: {
+      x: "-100%",
+      transition: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 30
+      }
+    },
+    open: {
+      x: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 30,
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const mobileItemVariants = {
+    closed: { 
+      opacity: 0, 
+      x: -20 
+    },
+    open: { 
+      opacity: 1, 
+      x: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 24
+      }
+    }
   };
 
   const handleSignOut = async () => {
@@ -60,8 +182,8 @@ export function Navbar() {
   };
 
   // Common hover styles for consistency
-  const hoverStyles = "hover:bg-pink-50 hover:text-pink-600 transition-all duration-200";
-  const mobileHoverStyles = "active:bg-pink-50 active:text-pink-600 transition-all duration-200";
+  const hoverStyles = "hover:bg-white/20 hover:text-pink-600 transition-all duration-200";
+  const mobileHoverStyles = "active:bg-white/20 active:text-pink-600 transition-all duration-200";
 
   // Navigation items for mobile menu
   const mobileNavItems = [
@@ -90,22 +212,49 @@ export function Navbar() {
       <motion.nav
         initial="hidden"
         animate="visible"
-        className={`sticky top-0 z-50 bg-white/95 backdrop-blur-lg transition-all duration-300 ${
-          isScrolled ? 'shadow-md py-2' : 'shadow-sm py-3'
-        } border-b border-gray-100`}
+        variants={navContainerVariants}
+        className={`sticky top-0 z-50 bg-white/20 backdrop-blur-2xl border-white/30 transition-all duration-300 ${
+          isScrolled ? 'shadow-lg shadow-black/10 py-2' : 'shadow-md shadow-black/5 py-3'
+        } border-b`}
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)'
+        }}
       >
         <div className="container mx-auto px-4 md:px-6">
           {/* Desktop Layout */}
           <div className="hidden md:flex items-center justify-between">
-            {/* Logo */}
-            <motion.div variants={navItemVariants} className="flex-shrink-0">
+            {/* Logo - Enhanced with better formatting */}
+            <motion.div 
+              variants={logoVariants}
+              whileHover="hover"
+              className="flex-shrink-0"
+            >
               <Link
                 href="/"
-                className="text-xl font-bold text-gray-900 hover:text-pink-600 transition-colors font-serif tracking-tight"
+                className="group flex flex-col items-start hover:no-underline transition-all duration-300"
               >
-                Fatima Boutique
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-light text-gray-900 tracking-widest font-serif italic">
+                    Fatima
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1 mt-[-4px]">
+                  <span className="text-sm font-medium text-pink-600 tracking-[0.3em] uppercase font-sans">
+                    Boutique
+                  </span>
+                </div>
+                {/* Elegant underline effect on hover */}
+                <motion.div 
+                  className="h-0.5 bg-gradient-to-r from-pink-500 to-pink-300 mt-1"
+                  variants={underlineVariants}
+                  initial="hidden"
+                  whileHover="hover"
+                />
               </Link>
             </motion.div>
+            
             {/* Right Side - Search & Actions */}
             <div className="flex items-center space-x-3">
               {/* Search Bar */}
@@ -121,14 +270,20 @@ export function Navbar() {
                 {/* Wishlist - Now consistent across both views */}
                 <motion.div variants={navItemVariants}>
                   <Link href="/wishlist">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`w-9 h-9 rounded-lg ${hoverStyles}`}
-                      aria-label="Wishlist"
+                    <motion.div
+                      whileHover="hover"
+                      whileTap="tap"
+                      variants={buttonVariants}
                     >
-                      <Heart className="w-4 h-4"/>
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles}`}
+                        aria-label="Wishlist"
+                      >
+                        <Heart className="w-4 h-4"/>
+                      </Button>
+                    </motion.div>
                   </Link>
                 </motion.div>
 
@@ -136,27 +291,33 @@ export function Navbar() {
                 <motion.div variants={navItemVariants}>
                   {isSignedIn ? (
                     <>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className={`w-9 h-9 rounded-lg ${hoverStyles}`}
-                        onClick={handleClick}
-                        aria-controls={open ? 'user-menu' : undefined}
-                        aria-haspopup="true"
-                        aria-expanded={open ? 'true' : undefined}
+                      <motion.div
+                        whileHover="hover"
+                        whileTap="tap"
+                        variants={buttonVariants}
                       >
-                        {user?.imageUrl ? (
-                          <Image
-                            width={32}
-                            height={32}
-                            src={user.imageUrl}
-                            alt={user.fullName || "User"}
-                            className="w-5 h-5 rounded-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-4 h-4" />
-                        )}
-                      </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className={`w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles}`}
+                          onClick={handleClick}
+                          aria-controls={open ? 'user-menu' : undefined}
+                          aria-haspopup="true"
+                          aria-expanded={open ? 'true' : undefined}
+                        >
+                          {user?.imageUrl ? (
+                            <Image
+                              width={32}
+                              height={32}
+                              src={user.imageUrl}
+                              alt={user.fullName || "User"}
+                              className="w-5 h-5 rounded-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </motion.div>
                       <Menu
                         id="user-menu"
                         anchorEl={anchorEl}
@@ -166,34 +327,38 @@ export function Navbar() {
                         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                         PaperProps={{
-                          elevation: 3,
+                          elevation: 0,
                           sx: {
                             overflow: 'visible',
-                            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.1))',
+                            filter: 'drop-shadow(0px 8px 32px rgba(0,0,0,0.1))',
                             mt: 1.5,
                             minWidth: 220,
-                            borderRadius: 2,
+                            borderRadius: 3,
+                            background: 'rgba(255, 255, 255, 0.9)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
                             '& .MuiMenuItem-root': {
                               fontSize: '0.875rem',
                               padding: '12px 16px',
                               '&:hover': {
-                                backgroundColor: 'rgb(253, 242, 248)',
+                                backgroundColor: 'rgba(253, 242, 248, 0.8)',
                                 color: 'rgb(219, 39, 119)',
                               },
                             },
                             '& .MuiDivider-root': {
                               margin: '8px 0',
+                              backgroundColor: 'rgba(0, 0, 0, 0.1)',
                             },
                           },
                         }}
                       >
                         {/* User Info */}
-                        <div className="px-4 py-3 border-b border-gray-100">
+                        <div className="px-4 py-3 border-b border-gray-200/50">
                           <div className="flex flex-col space-y-1">
                             <p className="text-sm font-medium text-gray-900">
                               {user?.fullName || user?.username || "User"}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-600">
                               {user?.primaryEmailAddress?.emailAddress}
                             </p>
                           </div>
@@ -225,23 +390,35 @@ export function Navbar() {
                     </>
                   ) : (
                     <div className="flex items-center space-x-2">
-                      <Link href="/sign-in">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`text-gray-600 text-sm font-medium ${hoverStyles}`}
-                        >
-                          Sign In
-                        </Button>                    
-                      </Link>
-                      <Link href='/sign-up'>
-                        <Button
-                          size="sm"
-                          className="bg-pink-600 hover:bg-pink-700 text-white text-sm font-medium"
-                        >
-                          Sign Up
-                        </Button>                
-                      </Link>  
+                      <motion.div
+                        whileHover="hover"
+                        whileTap="tap"
+                        variants={buttonVariants}
+                      >
+                        <Link href="/sign-in">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`text-gray-700 text-sm font-medium bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles}`}
+                          >
+                            Sign In
+                          </Button>                    
+                        </Link>
+                      </motion.div>
+                      <motion.div
+                        whileHover="hover"
+                        whileTap="tap"
+                        variants={buttonVariants}
+                      >
+                        <Link href='/sign-up'>
+                          <Button
+                            size="sm"
+                            className="bg-pink-600/90 hover:bg-pink-700/90 text-white text-sm font-medium backdrop-blur-sm border border-pink-500/30"
+                          >
+                            Sign Up
+                          </Button>                
+                        </Link>
+                      </motion.div>  
                     </div>
                   )}
                 </motion.div>
@@ -249,18 +426,20 @@ export function Navbar() {
                 {/* Cart */}
                 <motion.div variants={navItemVariants}>
                   <Link href="/cart">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className={`w-9 h-9 rounded-lg relative ${hoverStyles}`}
-                      aria-label="Shopping cart"
+                    <motion.div
+                      whileHover="hover"
+                      whileTap="tap"
+                      variants={buttonVariants}
                     >
-                      <ShoppingCart className="w-4 h-4" />
-                      {/* Cart count badge - uncomment when needed */}
-                      {/* <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                        3
-                      </span> */}
-                    </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`w-9 h-9 rounded-lg relative bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles}`}
+                        aria-label="Shopping cart"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                      </Button>
+                    </motion.div>
                   </Link>
                 </motion.div>
               </div>
@@ -273,34 +452,65 @@ export function Navbar() {
             <motion.div variants={navItemVariants}>
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`w-9 h-9 rounded-lg ${hoverStyles} ${mobileHoverStyles}`}
+                  <motion.div
+                    whileHover="hover"
+                    whileTap="tap"
+                    variants={buttonVariants}
                   >
-                    <MenuIcon className="w-5 h-5" />
-                  </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={`w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles} ${mobileHoverStyles}`}
+                    >
+                      <MenuIcon className="w-5 h-5" />
+                    </Button>
+                  </motion.div>
                 </SheetTrigger>
                 <SheetContent 
                   side="left" 
-                  className="w-80 bg-white/95 backdrop-blur-md border-r border-gray-200 p-0"
+                  className="w-80 p-0 border-r border-white/30"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)',
+                    backdropFilter: 'blur(20px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(180%)'
+                  }}
                 >
                   <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
-                  <div className="flex flex-col h-full">
+                  <motion.div 
+                    className="flex flex-col h-full"
+                    initial="closed"
+                    animate="open"
+                    variants={mobileMenuVariants}
+                  >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                    <motion.div 
+                      className="flex items-center justify-between p-4 border-b border-white/30"
+                      variants={mobileItemVariants}
+                    >
                       <Link 
                         href="/" 
-                        className="text-lg font-bold text-gray-900 font-serif hover:text-pink-600"
+                        className="group flex flex-col items-start hover:no-underline"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
-                        Fatima Boutique
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-light text-gray-900 tracking-widest font-serif italic">
+                            Fatima
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-1 mt-[-2px]">
+                          <span className="text-xs font-medium text-pink-600 tracking-[0.3em] uppercase font-sans">
+                            Boutique
+                          </span>
+                        </div>
                       </Link>
-                    </div>
+                    </motion.div>
 
                     {/* User Info */}
                     {isSignedIn && user && (
-                      <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                      <motion.div 
+                        className="p-4 border-b border-white/30 bg-white/20"
+                        variants={mobileItemVariants}
+                      >
                         <div className="flex items-center space-x-3">
                           {user?.imageUrl ? (
                             <Image
@@ -308,10 +518,10 @@ export function Navbar() {
                               height={40}
                               src={user.imageUrl}
                               alt={user.fullName || "User"}
-                              className="w-8 h-8 rounded-full object-cover"
+                              className="w-8 h-8 rounded-full object-cover border border-white/30"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-pink-100/50 flex items-center justify-center border border-white/30">
                               <User className="w-4 h-4 text-pink-600" />
                             </div>
                           )}
@@ -319,104 +529,142 @@ export function Navbar() {
                             <p className="text-sm font-medium text-gray-900 truncate">
                               {user.fullName || user.username}
                             </p>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-gray-700 truncate">
                               {user.primaryEmailAddress?.emailAddress}
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
 
                     {/* Navigation Items */}
                     <div className="flex-1 p-4 space-y-2">
-                      {mobileNavItems.map((item) => 
+                      {mobileNavItems.map((item, index) => 
                         item.show && (
-                          <Link 
+                          <motion.div
                             key={item.href}
-                            href={item.href} 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="block"
+                            variants={mobileItemVariants}
+                            custom={index}
                           >
-                            <Button
-                              variant="outline"
-                              className={`
-                                w-full justify-start 
-                                ${hoverStyles} ${mobileHoverStyles}
-                                border-gray-200
-                                transform transition-all duration-200
-                                active:scale-95
-                              `}
+                            <Link 
+                              href={item.href} 
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="block"
                             >
-                              <item.icon className="mr-3 w-4 h-4" />
-                              {item.label}
-                            </Button>
-                          </Link>
+                              <motion.div
+                                whileHover="hover"
+                                whileTap="tap"
+                                variants={buttonVariants}
+                              >
+                                <Button
+                                  variant="outline"
+                                  className={`
+                                    w-full justify-start 
+                                    bg-white/10 backdrop-blur-sm border border-white/20
+                                    ${hoverStyles} ${mobileHoverStyles}
+                                  `}
+                                >
+                                  <item.icon className="mr-3 w-4 h-4" />
+                                  {item.label}
+                                </Button>
+                              </motion.div>
+                            </Link>
+                          </motion.div>
                         )
                       )}
                     </div>
 
                     {/* Auth Section */}
-                    <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+                    <motion.div 
+                      className="p-4 border-t border-white/30 bg-white/20"
+                      variants={mobileItemVariants}
+                    >
                       {isSignedIn ? (
-                        <Button
-                          onClick={() => {
-                            handleSignOut();
-                            setIsMobileMenuOpen(false);
-                          }}
-                          variant="outline"
-                          className={`
-                            w-full justify-start text-red-600 border-red-200 
-                            hover:bg-red-50 hover:text-red-700
-                            active:bg-red-100 active:text-red-800
-                            transform transition-all duration-200
-                            active:scale-95
-                          `}
+                        <motion.div
+                          whileHover="hover"
+                          whileTap="tap"
+                          variants={buttonVariants}
                         >
-                          <LogOut className="mr-3 w-4 h-4" />
-                          Sign Out
-                        </Button>
+                          <Button
+                            onClick={() => {
+                              handleSignOut();
+                              setIsMobileMenuOpen(false);
+                            }}
+                            variant="outline"
+                            className={`
+                              w-full justify-start text-red-600 border-red-200/50 
+                              bg-white/10 backdrop-blur-sm
+                              hover:bg-red-50/50 hover:text-red-700
+                              active:bg-red-100/50 active:text-red-800
+                            `}
+                          >
+                            <LogOut className="mr-3 w-4 h-4" />
+                            Sign Out
+                          </Button>
+                        </motion.div>
                       ) : (
                         <div className="space-y-2">
-                          <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
-                            <Button 
-                              variant="outline" 
-                              className={`
-                                w-full 
-                                ${hoverStyles} ${mobileHoverStyles}
-                                border-gray-200
-                                transform transition-all duration-200
-                                active:scale-95
-                              `}
-                            >
-                              Sign In
-                            </Button>
-                          </Link>
-                          <Link href="/sign-up" onClick={() => setIsMobileMenuOpen(false)}>
-                            <Button 
-                              className={`
-                                w-full bg-pink-600 hover:bg-pink-700 text-white
-                                transform transition-all duration-200
-                                active:scale-95 active:bg-pink-800
-                              `}
-                            >
-                              Sign Up
-                            </Button>
-                          </Link>
+                          <motion.div
+                            whileHover="hover"
+                            whileTap="tap"
+                            variants={buttonVariants}
+                          >
+                            <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
+                              <Button 
+                                variant="outline" 
+                                className={`
+                                  w-full 
+                                  bg-white/10 backdrop-blur-sm border border-white/20
+                                  ${hoverStyles} ${mobileHoverStyles}
+                                `}
+                              >
+                                Sign In
+                              </Button>
+                            </Link>
+                          </motion.div>
+                          <motion.div
+                            whileHover="hover"
+                            whileTap="tap"
+                            variants={buttonVariants}
+                          >
+                            <Link href="/sign-up" onClick={() => setIsMobileMenuOpen(false)}>
+                              <Button 
+                                className={`
+                                  w-full bg-pink-600/90 hover:bg-pink-700/90 text-white
+                                  backdrop-blur-sm border border-pink-500/30
+                                `}
+                              >
+                                Sign Up
+                              </Button>
+                            </Link>
+                          </motion.div>
                         </div>
                       )}
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
                 </SheetContent>
               </Sheet>
             </motion.div>
 
             {/* Mobile Logo */}
-            <motion.div variants={navItemVariants}>
+            <motion.div 
+              variants={logoVariants}
+              whileHover="hover"
+            >
               <Link
                 href="/"
-                className="text-lg font-bold text-gray-900 font-serif hover:text-pink-600"
+                className="group flex flex-col items-start hover:no-underline"
               >
-                Fatima Boutique
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-light text-gray-900 tracking-widest font-serif italic">
+                    Fatima
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1 mt-[-2px]">
+                  <span className="text-xs font-medium text-pink-600 tracking-[0.3em] uppercase font-sans">
+                    Boutique
+                  </span>
+                </div>
               </Link>
             </motion.div>
 
@@ -425,47 +673,66 @@ export function Navbar() {
               {/* Wishlist - Now consistent with desktop */}
               <motion.div variants={navItemVariants}>
                 <Link href="/wishlist">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`w-9 h-9 rounded-lg ${hoverStyles} ${mobileHoverStyles}`}
-                    aria-label="Wishlist"
+                  <motion.div
+                    whileHover="hover"
+                    whileTap="tap"
+                    variants={buttonVariants}
                   >
-                    <Heart className="w-4 h-4"/>
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles} ${mobileHoverStyles}`}
+                      aria-label="Wishlist"
+                    >
+                      <Heart className="w-4 h-4"/>
+                    </Button>
+                  </motion.div>
                 </Link>
               </motion.div>
 
               {/* Search Button */}
               <motion.div variants={navItemVariants}>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className={`w-9 h-9 rounded-lg ${hoverStyles} ${mobileHoverStyles}`}
-                  onClick={() => setIsSearchModalOpen(true)}
-                  aria-label="Search"
+                <motion.div
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={buttonVariants}
                 >
-                  <Search className="w-4 h-4" />
-                </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles} ${mobileHoverStyles}`}
+                    onClick={() => setIsSearchModalOpen(true)}
+                    aria-label="Search"
+                  >
+                    <Search className="w-4 h-4" />
+                  </Button>
+                </motion.div>
               </motion.div>
 
               {/* Cart */}
               <motion.div variants={navItemVariants}>
                 <Link href="/cart">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`w-9 h-9 rounded-lg relative ${hoverStyles} ${mobileHoverStyles}`}
-                    aria-label="Shopping cart"
+                  <motion.div
+                    whileHover="hover"
+                    whileTap="tap"
+                    variants={buttonVariants}
                   >
-                    <ShoppingCart className="w-4 h-4" />
-                  </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={`w-9 h-9 rounded-lg relative bg-white/10 backdrop-blur-sm border border-white/20 ${hoverStyles} ${mobileHoverStyles}`}
+                      aria-label="Shopping cart"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                    </Button>
+                  </motion.div>
                 </Link>
               </motion.div>
             </div>
           </div>
         </div>
       </motion.nav>
+      
       <SearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}

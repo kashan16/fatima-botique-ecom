@@ -42,6 +42,7 @@ export interface Category {
   description: string | null;
   is_active: boolean;
   created_at: string;
+  image_url?: string
 }
 
 // Product Types
