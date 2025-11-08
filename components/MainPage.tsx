@@ -111,14 +111,14 @@ export const MainPage = () => {
   const heroImages = [
     {
       id: 1,
-      src: '/HeroImage1.jpeg',
+      src: '/Image1.jpeg',
       alt: 'Luxury Collection',
       title: 'Spring Collection',
       subtitle: 'Fresh styles for the new season'
     },
     {
       id: 2,
-      src: '/HeroImage2.jpeg',
+      src: '/Image2.jpeg',
       alt: 'Elegant Designs',
       title: 'Summer Essentials',
       subtitle: 'Light and comfortable'

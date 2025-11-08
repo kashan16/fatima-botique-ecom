@@ -311,34 +311,40 @@ export default function HeroWindowCards({ heroImages }: { heroImages: HeroImage[
                   </motion.div>
                 </div>
 
-                {/* Floating CTA Button - Positioned based on card shape */}
-                <motion.div 
-                  className={`
-                    absolute transform -translate-x-1/2
-                    ${index === 0 
-                      ? 'bottom-8 left-1/2' // Left card: button near flat bottom
-                      : 'top-8 left-1/2'    // Right card: button near flat top
-                    }
-                  `}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleNavigate("/products");
-                    }}
-                    className="relative bg-white/90 backdrop-blur-sm text-gray-800 hover:text-gray-900 hover:bg-white px-6 py-3 rounded-xl transition-all duration-300 group/btn overflow-hidden border border-white/60 shadow-lg"
+                {/* Content section at the bottom */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 via-black/30 to-transparent">
+                  <div className="text-center mb-4">
+                    <h3 className="text-white text-xl md:text-2xl font-bold mb-2">
+                      {image.title}
+                    </h3>
+                    <p className="text-white/80 text-sm md:text-base">
+                      {image.subtitle}
+                    </p>
+                  </div>
+
+                  {/* Floating CTA Button - Now at bottom for both cards */}
+                  <motion.div 
+                    className="flex justify-center"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <span className="relative z-10 flex items-center gap-2 font-medium">
-                      Explore Now 
-                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
-                    </span>
-                    
-                    {/* Animated background on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
-                  </Button>
-                </motion.div>
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNavigate("/products");
+                      }}
+                      className="relative bg-white/10 backdrop-blur-md text-white hover:text-white hover:bg-white/20 border border-white/30 px-6 py-3 rounded-xl transition-all duration-300 group/btn overflow-hidden shadow-lg"
+                    >
+                      <span className="relative z-10 flex items-center gap-2 font-medium">
+                        Explore Now 
+                        <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                      </span>
+                      
+                      {/* Subtle shimmer effect on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
+                    </Button>
+                  </motion.div>
+                </div>
               </div>
 
               {/* Conditional corner accents based on card shape */}
