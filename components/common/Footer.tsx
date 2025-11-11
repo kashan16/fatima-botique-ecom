@@ -34,7 +34,7 @@ export function Footer() {
             </li>
             <li className="flex items-center justify-center md:justify-start">
                 <PhoneIcon className="h-4 w-4 mr-2 text-pink-600" />
-                <span className="text-gray-700">+91 75180 13302</span>
+                <span className="text-gray-700">+91 78976 91947</span>
             </li>
           </ul>
         </div>
